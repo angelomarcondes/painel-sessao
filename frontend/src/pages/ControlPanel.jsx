@@ -1,13 +1,16 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Play, Pause, RotateCcw, Monitor, Maximize } from 'lucide-react';
+import { Play, Pause, RotateCcw, Monitor, Maximize, Settings, ChevronDown, ChevronUp } from 'lucide-react';
 
 export default function ControlPanel() {
   const navigate = useNavigate();
   const [socket, setSocket] = useState(null);
   const [sessionState, setSessionState] = useState(null);
   
+  // UI State
+  const [showSettings, setShowSettings] = useState(false);
+
   // Local form state
   const [speakerName, setSpeakerName] = useState('');
   const [phase, setPhase] = useState('Pequeno Expediente');
@@ -19,7 +22,7 @@ export default function ControlPanel() {
   const [audioUrl, setAudioUrl] = useState('');
   
   const [speakerList, setSpeakerList] = useState('');
-  const [phaseList, setPhaseList] = useState('');
+  const [phaseList, setPhaseList] = useState('Expediente\nOrdem do dia');
 
   useEffect(() => {
     if (!localStorage.getItem('auth_token')) {
@@ -42,14 +45,14 @@ export default function ControlPanel() {
       setAudioUrl(state.audioUrl || '');
       
       setSpeakerList(state.speakerList || '');
-      setPhaseList(state.phaseList || '');
+      setPhaseList(state.phaseList || 'Expediente\nOrdem do dia');
     });
 
     return () => newSocket.close();
   }, [navigate]);
 
   if (!sessionState) {
-    return <div className="loading">Conectando ao servidor...</div>;
+    return <div className="loading" style={{color: 'white', background: '#0f172a', height: '100vh', display: 'flex', alignItems:'center', justifyContent: 'center'}}>Conectando ao servidor...</div>;
   }
 
   const handleFileUpload = async (e, type) => {
@@ -89,8 +92,9 @@ export default function ControlPanel() {
        audioUrl,
        speakerList,
        phaseList
-       // Nota: A fase ativa e orador ativo agora são atualizados em tempo real pelos selectors
     });
+    alert("Configurações salvas com sucesso!");
+    setShowSettings(false); // Recolhe as configurações ao salvar
   };
 
   const handleDropdownUpdate = (field, value) => {
@@ -126,7 +130,6 @@ export default function ControlPanel() {
   };
 
   const toggleDisplayMode = () => {
-    // Agora o toggle total é resolvido e resetado no backend
     socket.emit('toggle_mode'); 
   };
 
@@ -134,80 +137,102 @@ export default function ControlPanel() {
   const phaseOptions = phaseList.split('\n').filter(s => s.trim() !== '');
 
   return (
-    <div className="control-container">
-      <header className="control-header">
-        <h2>Painel de Operador</h2>
+    <div className="control-container" style={{ padding: '1rem 2rem' }}>
+      <header className="control-header" style={{ marginBottom: '1rem', borderBottom: 'none' }}>
+        <h2 style={{ fontSize: '1.25rem' }}>Painel de Operador</h2>
         <div className="header-actions">
-           <button onClick={() => { localStorage.removeItem('auth_token'); navigate('/login'); }} className="btn-ghost">
+           <button onClick={() => { localStorage.removeItem('auth_token'); navigate('/login'); }} className="btn-ghost" style={{ padding: '0.4rem 1rem' }}>
              Sair
            </button>
         </div>
       </header>
 
-      <main className="control-content" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+      <main className="control-content" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '800px', margin: '0 auto' }}>
         
-        <section className="card">
-          <h3>Controles do Painel</h3>
-          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '1rem' }}>
-             <button onClick={openDisplay} className="btn-secondary" style={{ flex: 1, padding: '1rem' }}>
-               <Monitor size={18} /> Abrir painel
+        {/* === CONTROLES DO PAINEL === */}
+        <section className="card" style={{ padding: '1.25rem' }}>
+          <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', textAlign: 'left' }}>Controles do Painel</h3>
+          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+             <button onClick={openDisplay} className="btn-primary" style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+               <Monitor size={16} /> Abrir painel
              </button>
-             <button onClick={requestFullscreen} className="btn-secondary" style={{ flex: 1, padding: '1rem' }}>
-               <Maximize size={18} /> Colocar painel em tela cheia
+             <button onClick={requestFullscreen} style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+               <Maximize size={16} /> Tela cheia
              </button>
-             <button onClick={toggleDisplayMode} className="btn-secondary" style={{ flex: 1, padding: '1rem' }}>
-               Contador/Relógio
+             <button onClick={toggleDisplayMode} className="btn-success" style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+               {sessionState.displayMode === 'timer' ? 'Relógio' : 'Contador'}
              </button>
           </div>
         </section>
 
-        <section className="card timer-controls">
-          <h3>Controles do Relógio</h3>
-          
-          <div className="timer-status">
-            <span className={`status-badge ${sessionState.timer.isRunning ? 'running' : 'paused'}`}>
-              {sessionState.timer.isRunning ? 'Cronômetro Em Andamento' : 'Cronômetro Pausado'}
-            </span>
-          </div>
+        {/* === CONTROLES DO CONTADOR === */}
+        <section className="card timer-controls" style={{ padding: '1.5rem' }}>
+          <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem', textAlign: 'left' }}>Controles do Contador</h3>
 
-          <div className="control-buttons">
+          <div className="control-buttons" style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem' }}>
             {!sessionState.timer.isRunning ? (
-              <button className="btn-success" onClick={startTimer}>
-                <Play size={20} /> Iniciar
+              <button 
+                className={sessionState.timer.hasStarted ? "" : "btn-success"} 
+                style={{ 
+                  flex: 1, 
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center', 
+                  gap: '0.5rem',
+                  backgroundColor: sessionState.timer.hasStarted ? '#eab308' : '', 
+                  color: sessionState.timer.hasStarted ? 'black' : '',
+                  border: 'none',
+                  borderRadius: '8px',
+                   padding: '0.75rem',
+                   fontSize: '1rem',
+                   fontWeight: 'bold',
+                   cursor: 'pointer'
+                }} 
+                onClick={startTimer}
+              >
+                <Play size={18} /> {sessionState.timer.hasStarted ? 'Continuar' : 'Iniciar'}
               </button>
             ) : (
-              <button className="btn-warning" onClick={pauseTimer}>
-                <Pause size={20} /> Pausar
+              <button 
+                 className="btn-warning" 
+                 style={{ 
+                    flex: 1, 
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center', 
+                    gap: '0.5rem',
+                    backgroundColor: '#f97316', 
+                    color: 'white',
+                    border: 'none'
+                 }} 
+                 onClick={() => pauseTimer(false)}
+              >
+                <Pause size={18} /> Pausar
               </button>
             )}
             
-            <button className="btn-danger" onClick={() => pauseTimer(true)}>
-              <RotateCcw size={20} /> Zerar Cronômetro
+            <button className="btn-danger" style={{ flex: 1, justifyContent: 'center' }} onClick={() => pauseTimer(true)}>
+              <RotateCcw size={18} /> Zerar Cronômetro
             </button>
           </div>
           
-          <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%'}}>
-             <label style={{textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginTop: '1rem'}}>+ Adicionar Tempos Curtos:</label>
-             <div className="quick-times">
-                 <button onClick={() => addTimeSeconds(5)} className="btn-outline">+ 5 Seg</button>
-                 <button onClick={() => addTimeSeconds(30)} className="btn-outline">+ 30 Seg</button>
-                 <button onClick={() => addTimeSeconds(60)} className="btn-outline">+ 1 Min</button>
-                 <button onClick={() => addTimeSeconds(120)} className="btn-outline">+ 2 Min</button>
-             </div>
-
-             <label style={{textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginTop: '1rem'}}>+ Adicionar Tempos Longos:</label>
-             <div className="quick-times">
-                 <button onClick={() => addTimeSeconds(180)} className="btn-outline">+ 3 Min</button>
-                 <button onClick={() => addTimeSeconds(300)} className="btn-outline">+ 5 Min</button>
-                 <button onClick={() => addTimeSeconds(600)} className="btn-outline">+ 10 Min</button>
-                 <button onClick={() => addTimeSeconds(900)} className="btn-outline">+ 15 Min</button>
+          <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+             <label style={{ textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>+ Adicionar Tempos:</label>
+             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
+                 <button onClick={() => addTimeSeconds(5)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem' }}>+ 5s</button>
+                 <button onClick={() => addTimeSeconds(30)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem' }}>+ 30s</button>
+                 <button onClick={() => addTimeSeconds(60)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem' }}>+ 1m</button>
+                 <button onClick={() => addTimeSeconds(120)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem' }}>+ 2m</button>
+                 <button onClick={() => addTimeSeconds(180)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem' }}>+ 3m</button>
+                 <button onClick={() => addTimeSeconds(300)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem' }}>+ 5m</button>
+                 <button onClick={() => addTimeSeconds(600)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem' }}>+ 10m</button>
+                 <button onClick={() => addTimeSeconds(900)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem' }}>+ 15m</button>
              </div>
           </div>
           
-          {/* Seletores Movidos para Cá */}
-          <div style={{marginTop: '2rem', width: '100%', textAlign: 'left', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem'}}>
-             <div className="input-group" style={{marginBottom: '1rem'}}>
-               <label>Fase da Sessão (Definida na Identidade)</label>
+          <div style={{ marginTop: '2rem', width: '100%', textAlign: 'left', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
+             <div className="input-group" style={{ marginBottom: '1rem' }}>
+               <label>Fase da Sessão</label>
                <select value={phase} onChange={(e) => handleDropdownUpdate('phase', e.target.value)}>
                  <option value="">Selecione a Fase...</option>
                  {phaseOptions.map((opt, i) => (
@@ -216,8 +241,8 @@ export default function ControlPanel() {
                </select>
              </div>
              
-             <div className="input-group">
-               <label>Nome do Orador (Definido na Identidade)</label>
+             <div className="input-group" style={{ marginBottom: 0 }}>
+               <label>Nome do Orador</label>
                <select value={speakerName} onChange={(e) => handleDropdownUpdate('speaker', e.target.value)}>
                  <option value="">Selecione o Orador...</option>
                  {speakerOptions.map((opt, i) => (
@@ -228,68 +253,80 @@ export default function ControlPanel() {
           </div>
         </section>
 
-        <section className="card">
-          <h3>Sessão e Identidade</h3>
-          <form onSubmit={handleUpdateSettings} className="config-form">
-            
-            <div className="input-group">
-              <label>Nome da Instituição</label>
-              <input 
-                type="text" 
-                value={institutionName} 
-                onChange={(e) => setInstitutionName(e.target.value)} 
-                placeholder="Câmara Municipal de Carneirinho - MG"
-              />
-            </div>
-            
-            <div className="input-group">
-              <label>Lista de Oradores (Um nome por linha)</label>
-              <textarea 
-                rows="4"
-                value={speakerList} 
-                onChange={(e) => setSpeakerList(e.target.value)} 
-                placeholder="Ver. João&#10;Ver. Maria"
-                style={{width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.6)', color: 'white', border: '1px solid var(--border-color)'}}
-              />
-            </div>
+        {/* === AJUSTES E CONFIGURAÇÕES === */}
+        <section className="card" style={{ padding: '1.25rem' }}>
+          <div 
+             style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', cursor: 'pointer' }}
+             onClick={() => setShowSettings(!showSettings)}
+          >
+            <h3 style={{ fontSize: '1rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+              <Settings size={18} /> Ajustes e configurações
+            </h3>
+            {showSettings ? <ChevronUp size={20} /> : <ChevronDown size={20} />}
+          </div>
+          
+          {showSettings && (
+            <form onSubmit={handleUpdateSettings} className="config-form" style={{ marginTop: '1.5rem', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem' }}>
+              
+              <div className="input-group">
+                <label>Nome da Instituição</label>
+                <input 
+                  type="text" 
+                  value={institutionName} 
+                  onChange={(e) => setInstitutionName(e.target.value)} 
+                  placeholder="Câmara Municipal de Carneirinho - MG"
+                />
+              </div>
+              
+              <div className="input-group">
+                <label>Lista de Oradores (Um nome por linha)</label>
+                <textarea 
+                  rows="4"
+                  value={speakerList} 
+                  onChange={(e) => setSpeakerList(e.target.value)} 
+                  placeholder="Ver. João&#10;Ver. Maria"
+                  style={{width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.6)', color: 'white', border: '1px solid var(--border-color)'}}
+                />
+              </div>
 
-            <div className="input-group">
-              <label>Lista de Fases da Sessão (Uma fase por linha)</label>
-              <textarea 
-                rows="3"
-                value={phaseList} 
-                onChange={(e) => setPhaseList(e.target.value)} 
-                placeholder="Pequeno Expediente&#10;Grande Expediente"
-                style={{width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.6)', color: 'white', border: '1px solid var(--border-color)'}}
-              />
-            </div>
+              <div className="input-group">
+                <label>Lista de Fases da Sessão (Uma fase por linha)</label>
+                <textarea 
+                  rows="3"
+                  value={phaseList} 
+                  onChange={(e) => setPhaseList(e.target.value)} 
+                  placeholder="Expediente&#10;Ordem do dia"
+                  style={{width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.6)', color: 'white', border: '1px solid var(--border-color)'}}
+                />
+              </div>
 
-            <div style={{display: 'flex', gap: '1rem'}}>
-               <div className="input-group" style={{flex: 1}}>
-                 <label>Cor de Fundo (Painel)</label>
-                 <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} style={{padding: '0 0.5rem', height: '40px'}} />
-               </div>
-               
-               <div className="input-group" style={{flex: 1}}>
-                 <label>Cor do Texto</label>
-                 <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} style={{padding: '0 0.5rem', height: '40px'}} />
-               </div>
-            </div>
+              <div style={{display: 'flex', gap: '1rem'}}>
+                 <div className="input-group" style={{flex: 1}}>
+                   <label>Cor de Fundo (Painel)</label>
+                   <input type="color" value={bgColor} onChange={(e) => setBgColor(e.target.value)} style={{padding: '0 0.5rem', height: '40px'}} />
+                 </div>
+                 
+                 <div className="input-group" style={{flex: 1}}>
+                   <label>Cor do Texto</label>
+                   <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} style={{padding: '0 0.5rem', height: '40px'}} />
+                 </div>
+              </div>
 
-            <div className="input-group">
-              <label>Logo / Brasão (Imagem)</label>
-              <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'logo')} />
-              {logoUrl && <small style={{color: '#10b981'}}>✔ Imagem carregada com sucesso!</small>}
-            </div>
+              <div className="input-group">
+                <label>Logo / Brasão (Imagem)</label>
+                <input type="file" accept="image/*" onChange={(e) => handleFileUpload(e, 'logo')} />
+                {logoUrl && <small style={{color: '#10b981'}}>✔ Imagem carregada com sucesso!</small>}
+              </div>
 
-            <div className="input-group">
-              <label>Alarme de Fim de Tempo (Áudio)</label>
-              <input type="file" accept="audio/*" onChange={(e) => handleFileUpload(e, 'audio')} />
-              {audioUrl && <small style={{color: '#10b981'}}>✔ Áudio carregado com sucesso!</small>}
-            </div>
+              <div className="input-group">
+                <label>Alarme de Fim de Tempo (Áudio)</label>
+                <input type="file" accept="audio/*" onChange={(e) => handleFileUpload(e, 'audio')} />
+                {audioUrl && <small style={{color: '#10b981'}}>✔ Áudio carregado com sucesso!</small>}
+              </div>
 
-            <button type="submit" className="btn-primary">Atualizar Informações e Listas</button>
-          </form>
+              <button type="submit" className="btn-primary" style={{ width: '100%' }}>Atualizar Configurações</button>
+            </form>
+          )}
         </section>
       </main>
     </div>

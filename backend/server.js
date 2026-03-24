@@ -39,18 +39,19 @@ const io = new Server(server, {
 // Estado em memória
 let sessionState = {
   institutionName: 'Câmara Municipal de Carneirinho - MG', // Default solicitado
-  logoUrl: '',
+  logoUrl: 'http://localhost:3000/uploads/brasao.png',
   bgColor: '#000000',
   textColor: '#ffffff',
-  audioUrl: '',
+  audioUrl: 'http://localhost:3000/uploads/alarme.mp3',
   speakerList: '', // lista separada por linha
-  phaseList: '', // lista separada por linha
+  phaseList: 'Expediente\nOrdem do dia', // Default solicitado
   displayMode: 'clock', // Abrir primeiro com relógio, como solicitado
   activeSpeaker: '', // nome do orador
   timer: {
     duration: 300, 
     remaining: 300,
     isRunning: false,
+    hasStarted: false,
     updatedAt: Date.now()
   },
   phase: 'Pequeno Expediente', // Fase da sessão
@@ -71,14 +72,20 @@ io.on('connection', (socket) => {
 
   // Operações específicas do cronômetro para garantir precisão
   socket.on('start_timer', () => {
-    sessionState.timer.isRunning = true;
-    sessionState.timer.updatedAt = Date.now();
-    io.emit('state_update', sessionState);
+    if (sessionState.timer.remaining > 0) {
+      sessionState.timer.isRunning = true;
+      sessionState.timer.hasStarted = true;
+      sessionState.timer.updatedAt = Date.now();
+      io.emit('state_update', sessionState);
+    }
   });
 
   socket.on('pause_timer', (remaining) => {
     sessionState.timer.isRunning = false;
     sessionState.timer.remaining = remaining;
+    if (remaining <= 0) {
+      sessionState.timer.hasStarted = false;
+    }
     io.emit('state_update', sessionState);
   });
 
@@ -103,6 +110,7 @@ io.on('connection', (socket) => {
       sessionState.timer.remaining = 0;
       sessionState.timer.duration = 0;
       sessionState.timer.isRunning = false;
+      sessionState.timer.hasStarted = false;
     }
     
     io.emit('state_update', sessionState);

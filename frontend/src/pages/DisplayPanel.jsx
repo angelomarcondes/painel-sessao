@@ -10,6 +10,9 @@ export default function DisplayPanel() {
   const requestRef = useRef();
   const audioRef = useRef(null);
   const hasPlayedAudio = useRef(false);
+  
+  // Estado para capturar o exato momento em que o timer bateu 00:00
+  const [timeZeroAt, setTimeZeroAt] = useState(null);
 
   // Relógio do sistema
   useEffect(() => {
@@ -58,11 +61,6 @@ export default function DisplayPanel() {
         
         if (remaining <= 0) {
           remaining = 0;
-          // Tocar o som quando zera, apenas se não tiver tocado ainda!
-          if (!hasPlayedAudio.current && sessionState.audioUrl && audioRef.current) {
-             hasPlayedAudio.current = true;
-             audioRef.current.play().catch(e => console.log('Bloqueado pelo chrome, precisa interagir primeiro', e));
-          }
         }
         setDisplaySeconds(remaining);
       }
@@ -72,6 +70,26 @@ export default function DisplayPanel() {
     requestRef.current = requestAnimationFrame(updateTimerDisplay);
     return () => cancelAnimationFrame(requestRef.current);
   }, [sessionState]);
+
+  // Lógica de áudio e controle de timeZeroAt
+  useEffect(() => {
+      // Reproduzir áudio apenas na hora em que o cronômetro acabar e for de fato um timer ativo zerando
+      if (sessionState?.timer?.hasStarted && displaySeconds === 0 && !hasPlayedAudio.current) {
+         hasPlayedAudio.current = true;
+         if (audioRef.current) {
+            audioRef.current.play().catch(e => console.log('Erro ao tocar audio:', e));
+         }
+      }
+      
+      // Controla a flag para registrar o exato inicio do vermelho piscante
+      if (sessionState?.displayMode === 'timer' && sessionState?.timer?.hasStarted && displaySeconds === 0) {
+         if (!timeZeroAt) {
+            setTimeZeroAt(Date.now());
+         }
+      } else {
+         if (timeZeroAt) setTimeZeroAt(null); // Reseta a flag se sair do zero ou for pro relógio
+      }
+  }, [displaySeconds, sessionState, timeZeroAt]);
 
   if (!sessionState) {
     return <div className="display-loading" style={{color: 'white', background: 'black', height: '100vh', display: 'flex', alignItems:'center', justifyContent: 'center'}}>Aguardando conexão com a mesa operadora...</div>;
@@ -85,13 +103,16 @@ export default function DisplayPanel() {
   const institutionName = sessionState.institutionName || 'Câmara Municipal de Carneirinho - MG';
 
   const formatTime = (totalSeconds) => {
-    const min = Math.floor(Math.max(0, totalSeconds) / 60).toString().padStart(2, '0');
-    const sec = Math.floor(Math.max(0, totalSeconds) % 60).toString().padStart(2, '0');
-    return `${min}:${sec}`;
+    const min = Math.floor(Math.max(0, totalSeconds) / 60);
+    const sec = Math.floor(Math.max(0, totalSeconds) % 60);
+    return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
-  const isTimeUp = displaySeconds <= 0;
-  const isWarning = displaySeconds > 0 && displaySeconds <= 15; // Amarelo quando falta 15 segs
+  // Warning = 60 Segundos ou Menos E Maior que Zero
+  const isWarning = displaySeconds > 0 && displaySeconds <= 60;
+  
+  // Condição para TimeUp/Piscar: Ter acabado E estar dentro dos primeiros 5 segundos (+/- delay) após o término
+  const isTimeUpFlashing = sessionState?.timer?.hasStarted && displaySeconds === 0 && timeZeroAt && (Date.now() - timeZeroAt < 5000);
 
   return (
     <div className="display-container" style={{ backgroundColor: bgColor, color: textColor }}>
@@ -100,20 +121,27 @@ export default function DisplayPanel() {
       {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
 
       <div className="display-header" style={{ borderBottom: `1px solid ${textColor}33`, background: `linear-gradient(to bottom, ${textColor}1A, transparent)` }}>
-         <div className="brazao-placeholder">
-           {logoUrl ? (
-              <img src={logoUrl} alt="Brasão" style={{width: '90px', height: '90px', objectFit: 'contain', filter: 'drop-shadow(0px 0px 10px rgba(0,0,0,0.5))'}} />
-           ) : (
-              <div className="logo-circle" style={{ background: textColor, opacity: 0.2 }}></div>
-           )}
+         <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
+           <div className="brazao-placeholder">
+             {logoUrl ? (
+                <img src={logoUrl} alt="Brasão" style={{width: '90px', height: '90px', objectFit: 'contain', filter: 'drop-shadow(0px 0px 10px rgba(0,0,0,0.5))'}} />
+             ) : (
+                <div className="logo-circle" style={{ background: textColor, opacity: 0.2 }}></div>
+             )}
+           </div>
+           <div className="system-title" style={{ textAlign: 'left' }}>
+             <h1 style={{color: textColor, margin: 0}}>{institutionName}</h1>
+             {sessionState.displayMode !== 'clock' && (
+                 <h2 style={{color: textColor, opacity: 0.8, marginTop: '0.5rem'}}>{sessionState.phase || "Sessão Plenária"}</h2>
+             )}
+           </div>
          </div>
-         <div className="system-title">
-           <h1 style={{color: textColor}}>{institutionName}</h1>
-           <h2 style={{color: textColor, opacity: 0.8}}>{sessionState.phase || "Sessão Plenária"}</h2>
-         </div>
-         <div className="clock-widget" style={{color: textColor, opacity: 0.6}}>
-           {currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-         </div>
+         
+         {sessionState.displayMode !== 'clock' && (
+             <div className="clock-widget" style={{color: textColor, opacity: 0.6}}>
+               {currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+             </div>
+         )}
       </div>
 
       <div className="display-main">
@@ -131,8 +159,8 @@ export default function DisplayPanel() {
                </div>
       
                <div 
-                 className={`huge-timer ${isTimeUp ? 'time-up' : ''} ${isWarning ? 'time-warning' : ''}`}
-                 style={{ color: (isTimeUp || isWarning) ? '' : textColor, textShadow: `0 10px 40px ${textColor}33` }}
+                 className={`huge-timer ${isTimeUpFlashing ? 'time-up' : ''} ${isWarning ? 'time-warning' : ''}`}
+                 style={{ color: (isTimeUpFlashing || isWarning) ? '' : textColor, textShadow: `0 10px 40px ${textColor}33` }}
                >
                  {formatTime(displaySeconds)}
                </div>
