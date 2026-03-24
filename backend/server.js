@@ -2,9 +2,30 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 const app = express();
 app.use(cors());
+app.use(express.json());
+
+// Servindo arquivos estáticos de upload
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir);
+app.use('/uploads', express.static(uploadsDir));
+
+// Configuração do Multer
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, 'uploads/');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, uniqueSuffix + path.extname(file.originalname));
+  }
+});
+const upload = multer({ storage: storage });
 app.use(express.json());
 
 const server = http.createServer(app);
@@ -15,8 +36,13 @@ const io = new Server(server, {
   }
 });
 
-// Estado em memória (pode ser movido para banco de dados ou store externa se necessário)
+// Estado em memória
 let sessionState = {
+  institutionName: 'Câmara Municipal de Carneirinho - MG', // Default solicitado
+  logoUrl: '',
+  bgColor: '#000000',
+  textColor: '#ffffff',
+  audioUrl: '',
   activeSpeaker: null, // nome do orador
   timer: {
     duration: 300, // em segundos (ex: 5 minutos)
@@ -74,6 +100,15 @@ app.post('/api/login', (req, res) => {
   } else {
     res.status(401).json({ success: false, message: 'Senha incorreta' });
   }
+});
+
+// Endpoint de Upload para logo e áudio
+app.post('/api/upload', upload.single('file'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ success: false, message: 'Nenhum arquivo enviado.' });
+  }
+  // Retorna a URL pública relativa, que será usada no socket
+  res.json({ success: true, url: `/uploads/${req.file.filename}` });
 });
 
 const PORT = process.env.PORT || 3000;
