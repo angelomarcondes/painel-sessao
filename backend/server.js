@@ -43,10 +43,12 @@ let sessionState = {
   bgColor: '#000000',
   textColor: '#ffffff',
   audioUrl: '',
-  displayMode: 'timer', // 'timer' ou 'clock'
-  activeSpeaker: null, // nome do orador
+  speakerList: '', // lista separada por linha
+  phaseList: '', // lista separada por linha
+  displayMode: 'clock', // Abrir primeiro com relógio, como solicitado
+  activeSpeaker: '', // nome do orador
   timer: {
-    duration: 300, // em segundos (ex: 5 minutos)
+    duration: 300, 
     remaining: 300,
     isRunning: false,
     updatedAt: Date.now()
@@ -80,10 +82,29 @@ io.on('connection', (socket) => {
     io.emit('state_update', sessionState);
   });
 
-  socket.on('reset_timer', (duration) => {
-    sessionState.timer.isRunning = false;
-    sessionState.timer.duration = duration;
-    sessionState.timer.remaining = duration;
+  socket.on('add_time', (duration) => {
+    if (sessionState.timer.isRunning) {
+      const elapsed = (Date.now() - sessionState.timer.updatedAt) / 1000;
+      sessionState.timer.remaining = Math.max(0, sessionState.timer.remaining - elapsed) + duration;
+      sessionState.timer.updatedAt = Date.now();
+    } else {
+      sessionState.timer.remaining += duration;
+    }
+    sessionState.timer.duration = sessionState.timer.remaining;
+    io.emit('state_update', sessionState);
+  });
+  
+  // Substitui a troca no front por troca no backend, assim garantimos o zeramento global
+  socket.on('toggle_mode', () => {
+    sessionState.displayMode = sessionState.displayMode === 'timer' ? 'clock' : 'timer';
+    
+    // Zera o cronometro ao entrar no modo timer, como solicitado
+    if (sessionState.displayMode === 'timer') {
+      sessionState.timer.remaining = 0;
+      sessionState.timer.duration = 0;
+      sessionState.timer.isRunning = false;
+    }
+    
     io.emit('state_update', sessionState);
   });
 

@@ -17,6 +17,9 @@ export default function ControlPanel() {
   const [textColor, setTextColor] = useState('#ffffff');
   const [logoUrl, setLogoUrl] = useState('');
   const [audioUrl, setAudioUrl] = useState('');
+  
+  const [speakerList, setSpeakerList] = useState('');
+  const [phaseList, setPhaseList] = useState('');
 
   useEffect(() => {
     if (!localStorage.getItem('auth_token')) {
@@ -37,6 +40,9 @@ export default function ControlPanel() {
       setTextColor(state.textColor || '#ffffff');
       setLogoUrl(state.logoUrl || '');
       setAudioUrl(state.audioUrl || '');
+      
+      setSpeakerList(state.speakerList || '');
+      setPhaseList(state.phaseList || '');
     });
 
     return () => newSocket.close();
@@ -63,7 +69,6 @@ export default function ControlPanel() {
          if(type === 'logo') setLogoUrl(data.url);
          if(type === 'audio') setAudioUrl(data.url);
          
-         // Salva automaticamente o novo arquivo no websocket local, pra não precisar clicar em ATUALIZAR
          socket.emit('control_update', { 
            [type === 'logo' ? 'logoUrl' : 'audioUrl']: data.url 
          });
@@ -77,26 +82,41 @@ export default function ControlPanel() {
   const handleUpdateSettings = (e) => {
     e.preventDefault();
     socket.emit('control_update', { 
-       activeSpeaker: speakerName, 
-       phase,
        institutionName,
        bgColor,
        textColor,
        logoUrl,
-       audioUrl
+       audioUrl,
+       speakerList,
+       phaseList
+       // Nota: A fase ativa e orador ativo agora são atualizados em tempo real pelos selectors
     });
+  };
+
+  const handleDropdownUpdate = (field, value) => {
+    if (field === 'speaker') {
+      setSpeakerName(value);
+      socket.emit('control_update', { activeSpeaker: value });
+    } else {
+      setPhase(value);
+      socket.emit('control_update', { phase: value });
+    }
   };
 
   const startTimer = () => socket.emit('start_timer');
 
-  const pauseTimer = () => {
-    const elapsed = Math.floor((Date.now() - sessionState.timer.updatedAt) / 1000);
-    const remaining = Math.max(0, sessionState.timer.remaining - elapsed);
-    socket.emit('pause_timer', remaining);
+  const pauseTimer = (forceZero = false) => {
+    if (forceZero) {
+       socket.emit('pause_timer', 0);
+    } else {
+       const elapsed = Math.floor((Date.now() - sessionState.timer.updatedAt) / 1000);
+       const remaining = Math.max(0, sessionState.timer.remaining - elapsed);
+       socket.emit('pause_timer', remaining);
+    }
   };
 
-  const resetTimerSeconds = (seconds) => {
-    socket.emit('reset_timer', seconds);
+  const addTimeSeconds = (seconds) => {
+    socket.emit('add_time', seconds);
   };
   
   const openDisplay = () => window.open('/painel', '_blank');
@@ -106,9 +126,12 @@ export default function ControlPanel() {
   };
 
   const toggleDisplayMode = () => {
-    const newMode = sessionState.displayMode === 'timer' ? 'clock' : 'timer';
-    socket.emit('control_update', { displayMode: newMode });
+    // Agora o toggle total é resolvido e resetado no backend
+    socket.emit('toggle_mode'); 
   };
+
+  const speakerOptions = speakerList.split('\n').filter(s => s.trim() !== '');
+  const phaseOptions = phaseList.split('\n').filter(s => s.trim() !== '');
 
   return (
     <div className="control-container">
@@ -133,7 +156,7 @@ export default function ControlPanel() {
                <Maximize size={18} /> Colocar painel em tela cheia
              </button>
              <button onClick={toggleDisplayMode} className="btn-secondary" style={{ flex: 1, padding: '1rem' }}>
-               Contador/Relogio
+               Contador/Relógio
              </button>
           </div>
         </section>
@@ -158,26 +181,49 @@ export default function ControlPanel() {
               </button>
             )}
             
-            <button className="btn-danger" onClick={() => resetTimerSeconds(sessionState.timer.duration)}>
-              <RotateCcw size={20} /> Reiniciar Original
+            <button className="btn-danger" onClick={() => pauseTimer(true)}>
+              <RotateCcw size={20} /> Zerar Cronômetro
             </button>
           </div>
           
           <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%'}}>
-             <label style={{textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginTop: '1rem'}}>Atalhos de Tempos Curtos:</label>
+             <label style={{textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginTop: '1rem'}}>+ Adicionar Tempos Curtos:</label>
              <div className="quick-times">
-                 <button onClick={() => resetTimerSeconds(5)} className="btn-outline">5 Seg</button>
-                 <button onClick={() => resetTimerSeconds(30)} className="btn-outline">30 Seg</button>
-                 <button onClick={() => resetTimerSeconds(60)} className="btn-outline">1 Min</button>
-                 <button onClick={() => resetTimerSeconds(120)} className="btn-outline">2 Min</button>
+                 <button onClick={() => addTimeSeconds(5)} className="btn-outline">+ 5 Seg</button>
+                 <button onClick={() => addTimeSeconds(30)} className="btn-outline">+ 30 Seg</button>
+                 <button onClick={() => addTimeSeconds(60)} className="btn-outline">+ 1 Min</button>
+                 <button onClick={() => addTimeSeconds(120)} className="btn-outline">+ 2 Min</button>
              </div>
 
-             <label style={{textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginTop: '1rem'}}>Atalhos de Tempos Longos:</label>
+             <label style={{textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginTop: '1rem'}}>+ Adicionar Tempos Longos:</label>
              <div className="quick-times">
-                 <button onClick={() => resetTimerSeconds(180)} className="btn-outline">3 Min</button>
-                 <button onClick={() => resetTimerSeconds(300)} className="btn-outline">5 Min</button>
-                 <button onClick={() => resetTimerSeconds(600)} className="btn-outline">10 Min</button>
-                 <button onClick={() => resetTimerSeconds(900)} className="btn-outline">15 Min</button>
+                 <button onClick={() => addTimeSeconds(180)} className="btn-outline">+ 3 Min</button>
+                 <button onClick={() => addTimeSeconds(300)} className="btn-outline">+ 5 Min</button>
+                 <button onClick={() => addTimeSeconds(600)} className="btn-outline">+ 10 Min</button>
+                 <button onClick={() => addTimeSeconds(900)} className="btn-outline">+ 15 Min</button>
+             </div>
+          </div>
+          
+          {/* Seletores Movidos para Cá */}
+          <div style={{marginTop: '2rem', width: '100%', textAlign: 'left', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem'}}>
+             <div className="input-group" style={{marginBottom: '1rem'}}>
+               <label>Fase da Sessão (Definida na Identidade)</label>
+               <select value={phase} onChange={(e) => handleDropdownUpdate('phase', e.target.value)}>
+                 <option value="">Selecione a Fase...</option>
+                 {phaseOptions.map((opt, i) => (
+                    <option key={i} value={opt}>{opt}</option>
+                 ))}
+               </select>
+             </div>
+             
+             <div className="input-group">
+               <label>Nome do Orador (Definido na Identidade)</label>
+               <select value={speakerName} onChange={(e) => handleDropdownUpdate('speaker', e.target.value)}>
+                 <option value="">Selecione o Orador...</option>
+                 {speakerOptions.map((opt, i) => (
+                    <option key={i} value={opt}>{opt}</option>
+                 ))}
+               </select>
              </div>
           </div>
         </section>
@@ -193,6 +239,28 @@ export default function ControlPanel() {
                 value={institutionName} 
                 onChange={(e) => setInstitutionName(e.target.value)} 
                 placeholder="Câmara Municipal de Carneirinho - MG"
+              />
+            </div>
+            
+            <div className="input-group">
+              <label>Lista de Oradores (Um nome por linha)</label>
+              <textarea 
+                rows="4"
+                value={speakerList} 
+                onChange={(e) => setSpeakerList(e.target.value)} 
+                placeholder="Ver. João&#10;Ver. Maria"
+                style={{width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.6)', color: 'white', border: '1px solid var(--border-color)'}}
+              />
+            </div>
+
+            <div className="input-group">
+              <label>Lista de Fases da Sessão (Uma fase por linha)</label>
+              <textarea 
+                rows="3"
+                value={phaseList} 
+                onChange={(e) => setPhaseList(e.target.value)} 
+                placeholder="Pequeno Expediente&#10;Grande Expediente"
+                style={{width: '100%', padding: '0.75rem', borderRadius: '8px', background: 'rgba(15, 23, 42, 0.6)', color: 'white', border: '1px solid var(--border-color)'}}
               />
             </div>
 
@@ -220,27 +288,7 @@ export default function ControlPanel() {
               {audioUrl && <small style={{color: '#10b981'}}>✔ Áudio carregado com sucesso!</small>}
             </div>
 
-            <div className="input-group" style={{borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1rem'}}>
-              <label>Fase da Sessão</label>
-              <select value={phase} onChange={(e) => setPhase(e.target.value)}>
-                <option value="Pequeno Expediente">Pequeno Expediente</option>
-                <option value="Grande Expediente">Grande Expediente</option>
-                <option value="Ordem do Dia">Ordem do Dia</option>
-                <option value="Explicação Pessoal">Explicação Pessoal</option>
-              </select>
-            </div>
-            
-            <div className="input-group">
-              <label>Nome do Orador</label>
-              <input 
-                type="text" 
-                value={speakerName} 
-                onChange={(e) => setSpeakerName(e.target.value)} 
-                placeholder="Ex: Ver. João Silva"
-              />
-            </div>
-            
-            <button type="submit" className="btn-primary">Atualizar Informações no Telão</button>
+            <button type="submit" className="btn-primary">Atualizar Informações e Listas</button>
           </form>
         </section>
       </main>
