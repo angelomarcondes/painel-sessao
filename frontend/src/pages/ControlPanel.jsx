@@ -105,6 +105,11 @@ export default function ControlPanel() {
     socket.emit('request_fullscreen');
   };
 
+  const toggleDisplayMode = () => {
+    const newMode = sessionState.displayMode === 'timer' ? 'clock' : 'timer';
+    socket.emit('control_update', { displayMode: newMode });
+  };
+
   return (
     <div className="control-container">
       <header className="control-header">
@@ -188,9 +193,13 @@ export default function ControlPanel() {
         <section className="card timer-controls">
           <h3>Controles do Relógio</h3>
           
+          <button className="btn-secondary" onClick={toggleDisplayMode} style={{marginBottom: '1.5rem', width: '100%', fontSize: '1.2rem', padding: '1rem'}}>
+             Contador/Relogio
+          </button>
+          
           <div className="timer-status">
             <span className={`status-badge ${sessionState.timer.isRunning ? 'running' : 'paused'}`}>
-              {sessionState.timer.isRunning ? 'Em Andamento' : 'Pausado'}
+              {sessionState.timer.isRunning ? 'Cronômetro Em Andamento' : 'Cronômetro Pausado'}
             </span>
           </div>
 

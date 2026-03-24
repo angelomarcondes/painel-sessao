@@ -117,24 +117,34 @@ export default function DisplayPanel() {
       </div>
 
       <div className="display-main">
-         <div className="speaker-info">
-            <h3 style={{color: textColor, opacity: 0.5}}>Orador Atual</h3>
-            <div className="speaker-name" style={{color: textColor}}>
-              {sessionState.activeSpeaker || "Nenhum orador ativo"}
-            </div>
-         </div>
-
-         <div 
-           className={`huge-timer ${isTimeUp ? 'time-up' : ''} ${isWarning ? 'time-warning' : ''}`}
-           style={{ color: (isTimeUp || isWarning) ? '' : textColor, textShadow: `0 10px 40px ${textColor}33` }}
-         >
-           {formatTime(displaySeconds)}
-         </div>
+         {sessionState.displayMode === 'clock' ? (
+             <div className="huge-clock" style={{ color: textColor, fontSize: '20rem', fontWeight: 800, fontFamily: 'Outfit', textShadow: `0 10px 40px ${textColor}33`, fontVariantNumeric: 'tabular-nums' }}>
+               {currentTime.toLocaleTimeString('pt-BR')}
+             </div>
+         ) : (
+             <>
+               <div className="speaker-info">
+                  <h3 style={{color: textColor, opacity: 0.5}}>Orador Atual</h3>
+                  <div className="speaker-name" style={{color: textColor}}>
+                    {sessionState.activeSpeaker || "Nenhum orador ativo"}
+                  </div>
+               </div>
+      
+               <div 
+                 className={`huge-timer ${isTimeUp ? 'time-up' : ''} ${isWarning ? 'time-warning' : ''}`}
+                 style={{ color: (isTimeUp || isWarning) ? '' : textColor, textShadow: `0 10px 40px ${textColor}33` }}
+               >
+                 {formatTime(displaySeconds)}
+               </div>
+             </>
+         )}
       </div>
       
       <div className="display-footer" style={{ borderTop: `1px solid ${textColor}33`, background: `${textColor}0D` }}>
          <div className="status-bar" style={{color: textColor, opacity: 0.7}}>
-            {sessionState.timer.isRunning ? "Tempo em andamento" : "Temporizador Pausado"}
+            {sessionState.displayMode === 'clock' 
+                ? "Exibindo Hora Local" 
+                : (sessionState.timer.isRunning ? "Tempo em andamento" : "Temporizador Pausado")}
          </div>
       </div>
     </div>

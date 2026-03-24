@@ -43,6 +43,7 @@ let sessionState = {
   bgColor: '#000000',
   textColor: '#ffffff',
   audioUrl: '',
+  displayMode: 'timer', // 'timer' ou 'clock'
   activeSpeaker: null, // nome do orador
   timer: {
     duration: 300, // em segundos (ex: 5 minutos)
