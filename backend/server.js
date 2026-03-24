@@ -86,6 +86,10 @@ io.on('connection', (socket) => {
     io.emit('state_update', sessionState);
   });
 
+  socket.on('request_fullscreen', () => {
+    io.emit('enter_fullscreen');
+  });
+
   socket.on('disconnect', () => {
     console.log('❌ Cliente desconectado:', socket.id);
   });

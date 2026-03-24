@@ -34,6 +34,18 @@ export default function DisplayPanel() {
       }
     });
 
+    newSocket.on('enter_fullscreen', () => {
+      try {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch((err) => {
+            console.log(`Erro ao tentar fullscreen: ${err.message}`);
+          });
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    });
+
     return () => newSocket.close();
   }, []);
 

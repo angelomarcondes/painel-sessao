@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Play, Pause, RotateCcw, Monitor, Upload } from 'lucide-react';
+import { Play, Pause, RotateCcw, Monitor, Maximize } from 'lucide-react';
 
 export default function ControlPanel() {
   const navigate = useNavigate();
@@ -100,6 +100,10 @@ export default function ControlPanel() {
   };
   
   const openDisplay = () => window.open('/painel', '_blank');
+  
+  const requestFullscreen = () => {
+    socket.emit('request_fullscreen');
+  };
 
   return (
     <div className="control-container">
@@ -107,7 +111,10 @@ export default function ControlPanel() {
         <h2>Painel de Operador</h2>
         <div className="header-actions">
            <button onClick={openDisplay} className="btn-secondary">
-             <Monitor size={16} /> Abrir Tela
+             <Monitor size={16} /> Abrir painel
+           </button>
+           <button onClick={requestFullscreen} className="btn-secondary">
+             <Maximize size={16} /> Colocar painel em tela cheia
            </button>
            <button onClick={() => { localStorage.removeItem('auth_token'); navigate('/login'); }} className="btn-ghost">
              Sair
