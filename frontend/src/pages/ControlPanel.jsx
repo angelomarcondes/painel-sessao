@@ -115,19 +115,73 @@ export default function ControlPanel() {
       <header className="control-header">
         <h2>Painel de Operador</h2>
         <div className="header-actions">
-           <button onClick={openDisplay} className="btn-secondary">
-             <Monitor size={16} /> Abrir painel
-           </button>
-           <button onClick={requestFullscreen} className="btn-secondary">
-             <Maximize size={16} /> Colocar painel em tela cheia
-           </button>
            <button onClick={() => { localStorage.removeItem('auth_token'); navigate('/login'); }} className="btn-ghost">
              Sair
            </button>
         </div>
       </header>
 
-      <main className="control-content">
+      <main className="control-content" style={{ display: 'flex', flexDirection: 'column', gap: '2rem', maxWidth: '800px', margin: '0 auto' }}>
+        
+        <section className="card">
+          <h3>Controles do Painel</h3>
+          <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '1rem' }}>
+             <button onClick={openDisplay} className="btn-secondary" style={{ flex: 1, padding: '1rem' }}>
+               <Monitor size={18} /> Abrir painel
+             </button>
+             <button onClick={requestFullscreen} className="btn-secondary" style={{ flex: 1, padding: '1rem' }}>
+               <Maximize size={18} /> Colocar painel em tela cheia
+             </button>
+             <button onClick={toggleDisplayMode} className="btn-secondary" style={{ flex: 1, padding: '1rem' }}>
+               Contador/Relogio
+             </button>
+          </div>
+        </section>
+
+        <section className="card timer-controls">
+          <h3>Controles do Relógio</h3>
+          
+          <div className="timer-status">
+            <span className={`status-badge ${sessionState.timer.isRunning ? 'running' : 'paused'}`}>
+              {sessionState.timer.isRunning ? 'Cronômetro Em Andamento' : 'Cronômetro Pausado'}
+            </span>
+          </div>
+
+          <div className="control-buttons">
+            {!sessionState.timer.isRunning ? (
+              <button className="btn-success" onClick={startTimer}>
+                <Play size={20} /> Iniciar
+              </button>
+            ) : (
+              <button className="btn-warning" onClick={pauseTimer}>
+                <Pause size={20} /> Pausar
+              </button>
+            )}
+            
+            <button className="btn-danger" onClick={() => resetTimerSeconds(sessionState.timer.duration)}>
+              <RotateCcw size={20} /> Reiniciar Original
+            </button>
+          </div>
+          
+          <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%'}}>
+             <label style={{textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginTop: '1rem'}}>Atalhos de Tempos Curtos:</label>
+             <div className="quick-times">
+                 <button onClick={() => resetTimerSeconds(5)} className="btn-outline">5 Seg</button>
+                 <button onClick={() => resetTimerSeconds(30)} className="btn-outline">30 Seg</button>
+                 <button onClick={() => resetTimerSeconds(60)} className="btn-outline">1 Min</button>
+                 <button onClick={() => resetTimerSeconds(120)} className="btn-outline">2 Min</button>
+             </div>
+
+             <label style={{textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginTop: '1rem'}}>Atalhos de Tempos Longos:</label>
+             <div className="quick-times">
+                 <button onClick={() => resetTimerSeconds(180)} className="btn-outline">3 Min</button>
+                 <button onClick={() => resetTimerSeconds(300)} className="btn-outline">5 Min</button>
+                 <button onClick={() => resetTimerSeconds(600)} className="btn-outline">10 Min</button>
+                 <button onClick={() => resetTimerSeconds(900)} className="btn-outline">15 Min</button>
+             </div>
+          </div>
+        </section>
+
         <section className="card">
           <h3>Sessão e Identidade</h3>
           <form onSubmit={handleUpdateSettings} className="config-form">
@@ -188,54 +242,6 @@ export default function ControlPanel() {
             
             <button type="submit" className="btn-primary">Atualizar Informações no Telão</button>
           </form>
-        </section>
-
-        <section className="card timer-controls">
-          <h3>Controles do Relógio</h3>
-          
-          <button className="btn-secondary" onClick={toggleDisplayMode} style={{marginBottom: '1.5rem', width: '100%', fontSize: '1.2rem', padding: '1rem'}}>
-             Contador/Relogio
-          </button>
-          
-          <div className="timer-status">
-            <span className={`status-badge ${sessionState.timer.isRunning ? 'running' : 'paused'}`}>
-              {sessionState.timer.isRunning ? 'Cronômetro Em Andamento' : 'Cronômetro Pausado'}
-            </span>
-          </div>
-
-          <div className="control-buttons">
-            {!sessionState.timer.isRunning ? (
-              <button className="btn-success" onClick={startTimer}>
-                <Play size={20} /> Iniciar
-              </button>
-            ) : (
-              <button className="btn-warning" onClick={pauseTimer}>
-                <Pause size={20} /> Pausar
-              </button>
-            )}
-            
-            <button className="btn-danger" onClick={() => resetTimerSeconds(sessionState.timer.duration)}>
-              <RotateCcw size={20} /> Reiniciar Original
-            </button>
-          </div>
-          
-          <div style={{display: 'flex', flexDirection: 'column', gap: '0.5rem', width: '100%'}}>
-             <label style={{textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginTop: '1rem'}}>Atalhos de Tempos Curtos:</label>
-             <div className="quick-times">
-                 <button onClick={() => resetTimerSeconds(5)} className="btn-outline">5 Seg</button>
-                 <button onClick={() => resetTimerSeconds(30)} className="btn-outline">30 Seg</button>
-                 <button onClick={() => resetTimerSeconds(60)} className="btn-outline">1 Min</button>
-                 <button onClick={() => resetTimerSeconds(120)} className="btn-outline">2 Min</button>
-             </div>
-
-             <label style={{textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginTop: '1rem'}}>Atalhos de Tempos Longos:</label>
-             <div className="quick-times">
-                 <button onClick={() => resetTimerSeconds(180)} className="btn-outline">3 Min</button>
-                 <button onClick={() => resetTimerSeconds(300)} className="btn-outline">5 Min</button>
-                 <button onClick={() => resetTimerSeconds(600)} className="btn-outline">10 Min</button>
-                 <button onClick={() => resetTimerSeconds(900)} className="btn-outline">15 Min</button>
-             </div>
-          </div>
         </section>
       </main>
     </div>
