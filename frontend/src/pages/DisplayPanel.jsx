@@ -7,6 +7,7 @@ export default function DisplayPanel() {
   
   // Timer visual sync local state
   const [displaySeconds, setDisplaySeconds] = useState(0);
+  const [displayAparteSeconds, setDisplayAparteSeconds] = useState(0);
   
   const requestRef = useRef();
   const audioRef = useRef(null);
@@ -71,6 +72,14 @@ export default function DisplayPanel() {
         let remaining = Math.max(0, sessionState.timer.remaining - elapsed);
         setDisplaySeconds(remaining);
       }
+      
+      if (sessionState.aparte?.isActive) {
+        const elapsedAparte = (Date.now() - sessionState.aparte.startedAt) / 1000;
+        setDisplayAparteSeconds(elapsedAparte);
+      } else {
+        setDisplayAparteSeconds(0);
+      }
+      
       requestRef.current = requestAnimationFrame(updateTime);
     };
 
@@ -158,11 +167,38 @@ export default function DisplayPanel() {
                   </div>
                </div>
       
-               <div 
-                 className={`huge-timer ${isTimeUpFlashing ? 'time-up' : ''} ${isWarning ? 'time-warning' : ''}`}
-                 style={{ color: (isTimeUpFlashing || isWarning) ? '' : textColor, textShadow: `0 10px 40px ${textColor}33` }}
-               >
-                 {formatTime(displaySeconds)}
+               <div className="timers-wrapper" style={{ display: 'flex', gap: '4rem', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '0 2rem' }}>
+                 <div 
+                   className={`huge-timer ${isTimeUpFlashing ? 'time-up' : ''} ${isWarning ? 'time-warning' : ''}`}
+                   style={{ color: (isTimeUpFlashing || isWarning) ? '' : textColor, textShadow: `0 10px 40px ${textColor}33`, flex: sessionState.aparte?.isActive ? 1 : 'unset', textAlign: sessionState.aparte?.isActive ? 'right' : 'center' }}
+                 >
+                   {formatTime(displaySeconds)}
+                 </div>
+
+                 {sessionState.aparte?.isActive && (
+                    <div className="aparte-box" style={{ 
+                        flex: 1,
+                        background: `${textColor}1A`, 
+                        border: `2px solid ${textColor}4D`,
+                        borderRadius: '32px',
+                        padding: '3rem',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        backdropFilter: 'blur(16px)',
+                        boxShadow: `0 20px 50px ${textColor}1A`,
+                        animation: 'slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
+                    }}>
+                      <div style={{ color: textColor, opacity: 0.7, fontSize: '1.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>Aparteador</div>
+                      <div style={{ color: textColor, fontSize: '3.5rem', fontWeight: '800', marginBottom: '1rem', textAlign: 'center', lineHeight: '1.2' }}>
+                        {sessionState.aparte.aparteador || 'Aguardando seleção...'}
+                      </div>
+                      <div style={{ color: textColor, fontSize: '8rem', fontWeight: '800', fontVariantNumeric: 'tabular-nums', fontFamily: 'Outfit', lineHeight: '1' }}>
+                        {formatTime(displayAparteSeconds)}
+                      </div>
+                    </div>
+                 )}
                </div>
              </>
          )}

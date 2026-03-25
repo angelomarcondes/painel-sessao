@@ -54,6 +54,11 @@ let sessionState = {
     hasStarted: false,
     updatedAt: Date.now()
   },
+  aparte: {
+    isActive: false,
+    aparteador: '',
+    startedAt: null
+  },
   phase: 'Pequeno Expediente', // Fase da sessão
 };
 
@@ -101,6 +106,35 @@ io.on('connection', (socket) => {
     io.emit('state_update', sessionState);
   });
   
+  socket.on('start_aparte', () => {
+    if (sessionState.timer.remaining > 0 && sessionState.timer.isRunning) {
+      const elapsed = (Date.now() - sessionState.timer.updatedAt) / 1000;
+      sessionState.timer.remaining = Math.max(0, sessionState.timer.remaining - elapsed);
+      sessionState.timer.isRunning = false;
+      
+      sessionState.aparte.isActive = true;
+      sessionState.aparte.startedAt = Date.now();
+      sessionState.aparte.aparteador = '';
+      
+      io.emit('state_update', sessionState);
+    }
+  });
+
+  socket.on('stop_aparte', () => {
+    if (sessionState.aparte.isActive) {
+      sessionState.aparte.isActive = false;
+      sessionState.timer.isRunning = true;
+      sessionState.timer.updatedAt = Date.now();
+      
+      io.emit('state_update', sessionState);
+    }
+  });
+
+  socket.on('update_aparteador', (name) => {
+    sessionState.aparte.aparteador = name;
+    io.emit('state_update', sessionState);
+  });
+
   // Substitui a troca no front por troca no backend, assim garantimos o zeramento global
   socket.on('toggle_mode', () => {
     sessionState.displayMode = sessionState.displayMode === 'timer' ? 'clock' : 'timer';

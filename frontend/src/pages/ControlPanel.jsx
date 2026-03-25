@@ -132,6 +132,10 @@ export default function ControlPanel() {
     socket.emit('add_time', seconds);
   };
   
+  const startAparte = () => socket.emit('start_aparte');
+  const stopAparte = () => socket.emit('stop_aparte');
+  const handleAparteadorUpdate = (value) => socket.emit('update_aparteador', value);
+  
   const openDisplay = () => window.open('/painel', '_blank');
   
   const requestFullscreen = () => {
@@ -223,7 +227,34 @@ export default function ControlPanel() {
             <button className="btn-danger" style={{ flex: 1, justifyContent: 'center' }} onClick={() => pauseTimer(true)}>
               <RotateCcw size={18} /> Zerar Cronômetro
             </button>
+
+            {!sessionState.aparte?.isActive ? (
+              <button 
+                className={(!sessionState.timer.isRunning || sessionState.timer.remaining <= 0) ? "btn-secondary" : "btn-primary"} 
+                style={{ flex: 1, justifyContent: 'center', opacity: (!sessionState.timer.isRunning || sessionState.timer.remaining <= 0) ? 0.5 : 1 }} 
+                onClick={startAparte}
+                disabled={!sessionState.timer.isRunning || sessionState.timer.remaining <= 0}
+              >
+                Aparte
+              </button>
+            ) : (
+              <button className="btn-danger" style={{ flex: 1, justifyContent: 'center' }} onClick={stopAparte}>
+                Parar Aparte
+              </button>
+            )}
           </div>
+          
+          {sessionState.aparte?.isActive && (
+            <div className="input-group" style={{ marginBottom: '1.5rem', textAlign: 'left', width: '100%', border: '1px solid var(--primary)', padding: '1rem', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)' }}>
+              <label style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Selecione o aparteador</label>
+              <select value={sessionState.aparte.aparteador || ''} onChange={(e) => handleAparteadorUpdate(e.target.value)}>
+                <option value="">Aguardando seleção...</option>
+                {speakerOptions.map((opt, i) => (
+                  <option key={i} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+          )}
           
           <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
              <label style={{ textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>+ Adicionar Tempos:</label>
