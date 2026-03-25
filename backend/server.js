@@ -36,6 +36,11 @@ const io = new Server(server, {
   }
 });
 
+// Pasta de dados persistentes
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir);
+const settingsFile = path.join(dataDir, 'settings.json');
+
 // Estado em memória
 let sessionState = {
   institutionName: 'Câmara Municipal de Carneirinho - MG', // Default solicitado
@@ -62,6 +67,36 @@ let sessionState = {
   phase: 'Pequeno Expediente', // Fase da sessão
 };
 
+// Tenta carregar configurações persistidas no disco
+if (fs.existsSync(settingsFile)) {
+  try {
+    const savedSettings = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
+    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList'];
+    keysToPersist.forEach(key => {
+      if (savedSettings[key] !== undefined) {
+        sessionState[key] = savedSettings[key];
+      }
+    });
+  } catch (err) {
+    console.error('Erro ao ler settings.json:', err);
+  }
+}
+
+// Salva as configurações atuais no disco
+function saveSettings() {
+  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList'];
+  const settingsToSave = {};
+  keysToPersist.forEach(key => {
+    settingsToSave[key] = sessionState[key];
+  });
+  
+  try {
+    fs.writeFileSync(settingsFile, JSON.stringify(settingsToSave, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Erro ao salvar settings.json:', err);
+  }
+}
+
 io.on('connection', (socket) => {
   console.log('🔗 Cliente conectado:', socket.id);
 
@@ -71,6 +106,8 @@ io.on('connection', (socket) => {
   // Recebe atualizações do Painel de Controle
   socket.on('control_update', (newState) => {
     sessionState = { ...sessionState, ...newState };
+    // Salva no disco as novas configurações
+    saveSettings();
     // Repassa para todos os clientes (incluindo a Tela de Exibição)
     io.emit('state_update', sessionState);
   });
