@@ -46,6 +46,15 @@ export default function ControlPanel() {
       
       setSpeakerList(state.speakerList || '');
       setPhaseList(state.phaseList || 'Expediente\nOrdem do dia');
+      
+      // Ajusta dinamicamente a Aba do Chrome quando carregar o state
+      if (state.logoUrl) {
+         let icon = document.getElementById("favicon");
+         if (icon) icon.href = state.logoUrl;
+      }
+      if (state.institutionName) {
+         document.title = `Controle - ${state.institutionName}`;
+      }
     });
 
     return () => newSocket.close();

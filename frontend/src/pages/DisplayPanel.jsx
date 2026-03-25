@@ -2,104 +2,107 @@ import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
 
 export default function DisplayPanel() {
-  const [socket, setSocket] = useState(null);
   const [sessionState, setSessionState] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   
+  // Timer visual sync local state
   const [displaySeconds, setDisplaySeconds] = useState(0);
+  
   const requestRef = useRef();
   const audioRef = useRef(null);
-  const hasPlayedAudio = useRef(false);
   
-  // Estado para capturar o exato momento em que o timer bateu 00:00
+  const previousSecondsRef = useRef(0);
   const [timeZeroAt, setTimeZeroAt] = useState(null);
 
-  // Relógio do sistema
+  // Relógio do sistema global
   useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
+    const int = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(int);
   }, []);
 
-  // Socket
+  // Web Socket Connection
   useEffect(() => {
     const newSocket = io('http://localhost:3000');
-    setSocket(newSocket);
 
     newSocket.on('state_update', (state) => {
       setSessionState(state);
+      
       if (!state.timer.isRunning) {
          setDisplaySeconds(state.timer.remaining);
       }
       
-      // Se foi recarregado/resetado e ficou maior que zero, reseta a flag de áudio
+      // Armamos o alarme apenas se recebermos um tempo real que vai começar a rodar
       if(state.timer.remaining > 0) {
-         hasPlayedAudio.current = false;
+         setTimeZeroAt(null);
       }
+    });
+
+    // Modificação dinâmica da metadata da aba do navegador para Orador/Painel
+    newSocket.on('state_update', (state) => {
+       if (state.logoUrl) {
+          let icon = document.getElementById("favicon");
+          if (icon) icon.href = state.logoUrl;
+       }
+       if (state.institutionName) {
+          document.title = `Painel - ${state.institutionName}`;
+       }
     });
 
     newSocket.on('enter_fullscreen', () => {
       try {
         if (!document.fullscreenElement) {
           document.documentElement.requestFullscreen().catch((err) => {
-            console.log(`Erro ao tentar fullscreen: ${err.message}`);
+             console.log(`Erro ao tentar fullscreen: ${err.message}`);
           });
         }
-      } catch (err) {
-        console.error(err);
-      }
+      } catch(err) { console.error(err); }
     });
 
     return () => newSocket.close();
   }, []);
 
-  // Timer fluído
+  // O Relógio em queda livre
   useEffect(() => {
-    const updateTimerDisplay = () => {
-      if (sessionState && sessionState.timer.isRunning) {
+    if (!sessionState) return;
+
+    const updateTime = () => {
+      if (sessionState.timer.isRunning) {
         const elapsed = (Date.now() - sessionState.timer.updatedAt) / 1000;
-        let remaining = sessionState.timer.remaining - elapsed;
-        
-        if (remaining <= 0) {
-          remaining = 0;
-        }
+        let remaining = Math.max(0, sessionState.timer.remaining - elapsed);
         setDisplaySeconds(remaining);
       }
-      requestRef.current = requestAnimationFrame(updateTimerDisplay);
+      requestRef.current = requestAnimationFrame(updateTime);
     };
 
-    requestRef.current = requestAnimationFrame(updateTimerDisplay);
+    requestRef.current = requestAnimationFrame(updateTime);
     return () => cancelAnimationFrame(requestRef.current);
   }, [sessionState]);
 
-  // Lógica de áudio e controle de timeZeroAt
+  // DISPARO SEGURO DO AUDIO E DO EFEITO PISCANTE
   useEffect(() => {
-      // Reproduzir áudio apenas na hora em que o cronômetro acabar e for de fato um timer ativo zerando
-      if (sessionState?.timer?.hasStarted && displaySeconds === 0 && !hasPlayedAudio.current) {
-         hasPlayedAudio.current = true;
-         if (audioRef.current) {
-            audioRef.current.play().catch(e => console.log('Erro ao tocar audio:', e));
-         }
-      }
-      
-      // Controla a flag para registrar o exato inicio do vermelho piscante
-      if (sessionState?.displayMode === 'timer' && sessionState?.timer?.hasStarted && displaySeconds === 0) {
-         if (!timeZeroAt) {
-            setTimeZeroAt(Date.now());
-         }
-      } else {
-         if (timeZeroAt) setTimeZeroAt(null); // Reseta a flag se sair do zero ou for pro relógio
-      }
-  }, [displaySeconds, sessionState, timeZeroAt]);
+    if (sessionState && sessionState.displayMode === 'timer') {
+       // Apenas dispara matematicamente se:
+       // 1. Está atualmente ativo correndo
+       // 2. O tempo visualizou um frame anterior MAIOR que zero (se abriu zerado ou de pause, ele começa de 0, então ignorado)
+       // 3. O frame atual bateu ZERO.
+       if (sessionState.timer.isRunning && previousSecondsRef.current > 0 && displaySeconds <= 0) {
+          setTimeZeroAt(Date.now()); // Acende o cromômetro visual de 5 segundos do Vermelho
+          
+          if (audioRef.current && sessionState.audioUrl) {
+             audioRef.current.play().catch(e => console.log('Bloqueado pelo chrome', e));
+          }
+       }
+    }
+    
+    // Rastreador matemático guardando o frame para a próxima rodada do Effect
+    previousSecondsRef.current = displaySeconds;
+  }, [displaySeconds, sessionState]);
 
   if (!sessionState) {
     return <div className="display-loading" style={{color: 'white', background: 'black', height: '100vh', display: 'flex', alignItems:'center', justifyContent: 'center'}}>Aguardando conexão com a mesa operadora...</div>;
   }
 
-  // Prepara variaveis visuais
-  const bgColor = sessionState.bgColor || '#000000';
-  const textColor = sessionState.textColor || '#ffffff';
-  const logoUrl = sessionState.logoUrl ? `http://localhost:3000${sessionState.logoUrl}` : null;
-  const audioUrl = sessionState.audioUrl ? `http://localhost:3000${sessionState.audioUrl}` : null;
+  const { bgColor, textColor, logoUrl, audioUrl } = sessionState;
   const institutionName = sessionState.institutionName || 'Câmara Municipal de Carneirinho - MG';
 
   const formatTime = (totalSeconds) => {
@@ -108,16 +111,13 @@ export default function DisplayPanel() {
     return `${min.toString().padStart(2, '0')}:${sec.toString().padStart(2, '0')}`;
   };
 
-  // Warning = 60 Segundos ou Menos E Maior que Zero
   const isWarning = displaySeconds > 0 && displaySeconds <= 60;
   
-  // Condição para TimeUp/Piscar: Ter acabado E estar dentro dos primeiros 5 segundos (+/- delay) após o término
-  const isTimeUpFlashing = sessionState?.timer?.hasStarted && displaySeconds === 0 && timeZeroAt && (Date.now() - timeZeroAt < 5000);
+  // Piscar apenas quando atingir 0 de forma natural (tendo tempoZero capturado) e durante os 5s seguintes
+  const isTimeUpFlashing = timeZeroAt && (Date.now() - timeZeroAt < 5000) && displaySeconds <= 0;
 
   return (
     <div className="display-container" style={{ backgroundColor: bgColor, color: textColor }}>
-      
-      {/* Player de áudio invisível */}
       {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
 
       <div className="display-header" style={{ borderBottom: `1px solid ${textColor}33`, background: `linear-gradient(to bottom, ${textColor}1A, transparent)` }}>
