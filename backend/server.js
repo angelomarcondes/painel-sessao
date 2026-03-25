@@ -39,10 +39,10 @@ const io = new Server(server, {
 // Estado em memória
 let sessionState = {
   institutionName: 'Câmara Municipal de Carneirinho - MG', // Default solicitado
-  logoUrl: 'http://localhost:3000/uploads/brasao.png',
+  logoUrl: '/uploads/brasao.png',
   bgColor: '#000000',
   textColor: '#ffffff',
-  audioUrl: 'http://localhost:3000/uploads/alarme.mp3',
+  audioUrl: '/uploads/alarme.mp3',
   speakerList: '', // lista separada por linha
   phaseList: 'Expediente\nOrdem do dia', // Default solicitado
   displayMode: 'clock', // Abrir primeiro com relógio, como solicitado

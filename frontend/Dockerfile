@@ -19,6 +19,24 @@ server {\n\
         index  index.html index.htm;\n\
         try_files $uri $uri/ /index.html;\n\
     }\n\
+    location /api/ {\n\
+        proxy_pass http://backend:3000/api/;\n\
+        proxy_http_version 1.1;\n\
+        proxy_set_header Upgrade $http_upgrade;\n\
+        proxy_set_header Connection "upgrade";\n\
+        proxy_set_header Host $host;\n\
+    }\n\
+    location /uploads/ {\n\
+        proxy_pass http://backend:3000/uploads/;\n\
+        proxy_set_header Host $host;\n\
+    }\n\
+    location /socket.io/ {\n\
+        proxy_pass http://backend:3000/socket.io/;\n\
+        proxy_http_version 1.1;\n\
+        proxy_set_header Upgrade $http_upgrade;\n\
+        proxy_set_header Connection "upgrade";\n\
+        proxy_set_header Host $host;\n\
+    }\n\
 }\n\
 ' > /etc/nginx/conf.d/default.conf
 

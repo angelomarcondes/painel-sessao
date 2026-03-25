@@ -22,7 +22,7 @@ export default function DisplayPanel() {
 
   // Web Socket Connection
   useEffect(() => {
-    const newSocket = io('http://localhost:3000');
+    const newSocket = io();
 
     newSocket.on('state_update', (state) => {
       setSessionState(state);
