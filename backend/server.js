@@ -152,7 +152,7 @@ io.on('connection', (socket) => {
     if (sessionState.timer.remaining > 0 && sessionState.timer.isRunning) {
       const elapsed = (Date.now() - sessionState.timer.updatedAt) / 1000;
       sessionState.timer.remaining = Math.max(0, sessionState.timer.remaining - elapsed);
-      sessionState.timer.isRunning = false;
+      sessionState.timer.updatedAt = Date.now();
       
       sessionState.aparte.isActive = true;
       sessionState.aparte.startedAt = Date.now();
@@ -165,8 +165,11 @@ io.on('connection', (socket) => {
   socket.on('stop_aparte', () => {
     if (sessionState.aparte.isActive) {
       sessionState.aparte.isActive = false;
-      sessionState.timer.isRunning = true;
-      sessionState.timer.updatedAt = Date.now();
+      if (sessionState.timer.isRunning) {
+        const elapsed = (Date.now() - sessionState.timer.updatedAt) / 1000;
+        sessionState.timer.remaining = Math.max(0, sessionState.timer.remaining - elapsed);
+        sessionState.timer.updatedAt = Date.now();
+      }
       
       io.emit('state_update', sessionState);
     }
