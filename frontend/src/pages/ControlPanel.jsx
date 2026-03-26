@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Play, Pause, RotateCcw, Monitor, Maximize, Settings, ChevronDown, ChevronUp } from 'lucide-react';
+import { Play, Pause, RotateCcw, Monitor, Maximize, Settings, ChevronDown, ChevronUp, Sliders, Timer } from 'lucide-react';
 
 export default function ControlPanel() {
   const navigate = useNavigate();
@@ -191,7 +191,9 @@ export default function ControlPanel() {
         
         {/* === CONTROLES DO PAINEL === */}
         <section className="card" style={{ padding: '1.25rem' }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', textAlign: 'left' }}>Controles do Painel</h3>
+          <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start' }}>
+            <Sliders size={18} /> Controles do Painel
+          </h3>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
              <button 
                 onClick={handlePanelToggle} 
@@ -221,7 +223,9 @@ export default function ControlPanel() {
 
         {/* === CONTROLES DO CONTADOR === */}
         <section className="card timer-controls" style={{ padding: '1.5rem' }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem', textAlign: 'left' }}>Controles do Contador</h3>
+          <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start' }}>
+            <Timer size={18} /> Controles do Contador
+          </h3>
 
           <div className="control-buttons" style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem' }}>
             {!sessionState.timer.isRunning ? (
