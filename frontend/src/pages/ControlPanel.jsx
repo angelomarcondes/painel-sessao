@@ -24,6 +24,11 @@ export default function ControlPanel() {
   const [speakerList, setSpeakerList] = useState('');
   const [phaseList, setPhaseList] = useState('Expediente\nOrdem do dia');
 
+  const [clockFontSize, setClockFontSize] = useState(20);
+  const [timerFontSize, setTimerFontSize] = useState(18);
+  const [speakerFontSize, setSpeakerFontSize] = useState(4);
+  const [titleFontSize, setTitleFontSize] = useState(2.5);
+
   useEffect(() => {
     if (!localStorage.getItem('auth_token')) {
       navigate('/login');
@@ -46,6 +51,11 @@ export default function ControlPanel() {
       
       setSpeakerList(state.speakerList || '');
       setPhaseList(state.phaseList || 'Expediente\nOrdem do dia');
+      
+      setClockFontSize(state.clockFontSize || 20);
+      setTimerFontSize(state.timerFontSize || 18);
+      setSpeakerFontSize(state.speakerFontSize || 4);
+      setTitleFontSize(state.titleFontSize || 2.5);
       
       // Ajusta dinamicamente a Aba do Chrome quando carregar o state
       if (state.logoUrl) {
@@ -100,7 +110,11 @@ export default function ControlPanel() {
        logoUrl,
        audioUrl,
        speakerList,
-       phaseList
+       phaseList,
+       clockFontSize,
+       timerFontSize,
+       speakerFontSize,
+       titleFontSize
     });
     alert("Configurações salvas com sucesso!");
     setShowSettings(false); // Recolhe as configurações ao salvar
@@ -350,6 +364,26 @@ export default function ControlPanel() {
                    <label>Cor do Texto</label>
                    <input type="color" value={textColor} onChange={(e) => setTextColor(e.target.value)} style={{padding: '0 0.5rem', height: '40px'}} />
                  </div>
+              </div>
+
+              <h4 style={{marginTop: '1rem', marginBottom: '0.5rem', fontSize: '1.1rem', color: 'var(--text-main)', textAlign: 'left'}}>Tamanho dos Textos</h4>
+              <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '1rem', marginBottom: '1.5rem', background: 'rgba(255,255,255,0.05)', padding: '1rem', borderRadius: '8px', border: '1px solid var(--border-color)'}}>
+                <div className="input-group" style={{marginBottom: 0}}>
+                  <label style={{color: 'var(--text-main)'}}>Relógio ({clockFontSize}rem)</label>
+                  <input type="range" min="10" max="40" step="1" value={clockFontSize} onChange={(e) => setClockFontSize(Number(e.target.value))} style={{padding: 0, height: 'auto', background: 'transparent'}} />
+                </div>
+                <div className="input-group" style={{marginBottom: 0}}>
+                  <label style={{color: 'var(--text-main)'}}>Contador ({timerFontSize}rem)</label>
+                  <input type="range" min="8" max="30" step="1" value={timerFontSize} onChange={(e) => setTimerFontSize(Number(e.target.value))} style={{padding: 0, height: 'auto', background: 'transparent'}} />
+                </div>
+                <div className="input-group" style={{marginBottom: 0}}>
+                  <label style={{color: 'var(--text-main)'}}>Orador Atual ({speakerFontSize}rem)</label>
+                  <input type="range" min="2" max="10" step="0.5" value={speakerFontSize} onChange={(e) => setSpeakerFontSize(Number(e.target.value))} style={{padding: 0, height: 'auto', background: 'transparent'}} />
+                </div>
+                <div className="input-group" style={{marginBottom: 0}}>
+                  <label style={{color: 'var(--text-main)'}}>Nome da Câmara ({titleFontSize}rem)</label>
+                  <input type="range" min="1" max="8" step="0.5" value={titleFontSize} onChange={(e) => setTitleFontSize(Number(e.target.value))} style={{padding: 0, height: 'auto', background: 'transparent'}} />
+                </div>
               </div>
 
               <div className="input-group">

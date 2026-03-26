@@ -1,0 +1,13 @@
+{
+  "institutionName": "Câmara Municipal de Carneirinho - MG",
+  "logoUrl": "/uploads/brasao.png",
+  "bgColor": "#000000",
+  "textColor": "#ffffff",
+  "audioUrl": "/uploads/alarme.mp3",
+  "speakerList": "zz\nzaza\nzuzu",
+  "phaseList": "Expediente\nOrdem do dia",
+  "clockFontSize": 25,
+  "timerFontSize": 21,
+  "speakerFontSize": 7.5,
+  "titleFontSize": 2.5
+}

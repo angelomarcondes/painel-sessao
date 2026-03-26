@@ -65,13 +65,17 @@ let sessionState = {
     startedAt: null
   },
   phase: 'Pequeno Expediente', // Fase da sessão
+  clockFontSize: 20,
+  timerFontSize: 18,
+  speakerFontSize: 4,
+  titleFontSize: 2.5
 };
 
 // Tenta carregar configurações persistidas no disco
 if (fs.existsSync(settingsFile)) {
   try {
     const savedSettings = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
-    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList'];
+    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize'];
     keysToPersist.forEach(key => {
       if (savedSettings[key] !== undefined) {
         sessionState[key] = savedSettings[key];
@@ -84,7 +88,7 @@ if (fs.existsSync(settingsFile)) {
 
 // Salva as configurações atuais no disco
 function saveSettings() {
-  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList'];
+  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize'];
   const settingsToSave = {};
   keysToPersist.forEach(key => {
     settingsToSave[key] = sessionState[key];

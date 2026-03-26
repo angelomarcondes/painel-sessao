@@ -111,7 +111,7 @@ export default function DisplayPanel() {
     return <div className="display-loading" style={{color: 'white', background: 'black', height: '100vh', display: 'flex', alignItems:'center', justifyContent: 'center'}}>Aguardando conexão com a mesa operadora...</div>;
   }
 
-  const { bgColor, textColor, logoUrl, audioUrl } = sessionState;
+  const { bgColor, textColor, logoUrl, audioUrl, clockFontSize = 20, timerFontSize = 18, speakerFontSize = 4, titleFontSize = 2.5 } = sessionState;
   const institutionName = sessionState.institutionName || 'Câmara Municipal de Carneirinho - MG';
 
   const formatTime = (totalSeconds) => {
@@ -139,7 +139,7 @@ export default function DisplayPanel() {
              )}
            </div>
            <div className="system-title" style={{ textAlign: 'left' }}>
-             <h1 style={{color: textColor, margin: 0}}>{institutionName}</h1>
+             <h1 style={{color: textColor, margin: 0, fontSize: `${titleFontSize}rem`}}>{institutionName}</h1>
              {sessionState.displayMode !== 'clock' && (
                  <h2 style={{color: textColor, opacity: 0.8, marginTop: '0.5rem'}}>{sessionState.phase || "Sessão Plenária"}</h2>
              )}
@@ -155,14 +155,14 @@ export default function DisplayPanel() {
 
       <div className="display-main">
          {sessionState.displayMode === 'clock' ? (
-             <div className="huge-clock" style={{ color: textColor, fontSize: '20rem', fontWeight: 800, fontFamily: 'Outfit', textShadow: `0 10px 40px ${textColor}33`, fontVariantNumeric: 'tabular-nums' }}>
+             <div className="huge-clock" style={{ color: textColor, fontSize: `${clockFontSize}rem`, fontWeight: 800, fontFamily: 'Outfit', textShadow: `0 10px 40px ${textColor}33`, fontVariantNumeric: 'tabular-nums' }}>
                {currentTime.toLocaleTimeString('pt-BR')}
              </div>
          ) : (
              <>
                <div className="speaker-info">
                   <h3 style={{color: textColor, opacity: 0.5}}>Orador Atual</h3>
-                  <div className="speaker-name" style={{color: textColor}}>
+                  <div className="speaker-name" style={{color: textColor, fontSize: `${speakerFontSize}rem`}}>
                     {sessionState.activeSpeaker || "Nenhum orador ativo"}
                   </div>
                </div>
@@ -170,7 +170,7 @@ export default function DisplayPanel() {
                <div className="timers-wrapper" style={{ display: 'flex', gap: '4rem', alignItems: 'center', justifyContent: 'center', width: '100%', padding: '0 2rem' }}>
                  <div 
                    className={`huge-timer ${isTimeUpFlashing ? 'time-up' : ''} ${isWarning ? 'time-warning' : ''}`}
-                   style={{ color: (isTimeUpFlashing || isWarning) ? '' : textColor, textShadow: `0 10px 40px ${textColor}33`, flex: sessionState.aparte?.isActive ? 1 : 'unset', textAlign: sessionState.aparte?.isActive ? 'right' : 'center' }}
+                   style={{ color: (isTimeUpFlashing || isWarning) ? '' : textColor, fontSize: `${timerFontSize}rem`, textShadow: `0 10px 40px ${textColor}33`, flex: sessionState.aparte?.isActive ? 1 : 'unset', textAlign: sessionState.aparte?.isActive ? 'right' : 'center' }}
                  >
                    {formatTime(displaySeconds)}
                  </div>
