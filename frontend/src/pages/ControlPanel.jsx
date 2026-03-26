@@ -16,6 +16,7 @@ export default function ControlPanel() {
   const [phase, setPhase] = useState('');
   
   const [institutionName, setInstitutionName] = useState('Câmara Municipal de Carneirinho - MG');
+  const [sessionInfo, setSessionInfo] = useState('Xª ordinária, dd/mm/aaaa');
   const [bgColor, setBgColor] = useState('#000000');
   const [textColor, setTextColor] = useState('#ffffff');
   const [logoUrl, setLogoUrl] = useState('');
@@ -44,6 +45,7 @@ export default function ControlPanel() {
       setPhase(state.phase || '');
       
       setInstitutionName(state.institutionName || 'Câmara Municipal de Carneirinho - MG');
+      setSessionInfo(state.sessionInfo || 'Xª ordinária, dd/mm/aaaa');
       setBgColor(state.bgColor || '#000000');
       setTextColor(state.textColor || '#ffffff');
       setLogoUrl(state.logoUrl || '');
@@ -105,6 +107,7 @@ export default function ControlPanel() {
     e.preventDefault();
     socket.emit('control_update', { 
        institutionName,
+       sessionInfo,
        bgColor,
        textColor,
        logoUrl,
@@ -148,7 +151,7 @@ export default function ControlPanel() {
   
   const startAparte = () => socket.emit('start_aparte');
   const stopAparte = () => socket.emit('stop_aparte');
-  const handleAparteadorUpdate = (value) => socket.emit('update_aparteador', value);
+  const handleAparteanteUpdate = (value) => socket.emit('update_aparteante', value);
   
   const handlePanelToggle = () => {
     if (sessionState.isPanelOpen) {
@@ -296,8 +299,8 @@ export default function ControlPanel() {
           
           {sessionState.aparte?.isActive && (
             <div className="input-group" style={{ marginBottom: '1.5rem', textAlign: 'left', width: '100%', border: '1px solid var(--primary)', padding: '1rem', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', opacity: isTimerMode ? 1 : 0.5 }}>
-              <label style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Selecione o aparteador</label>
-              <select disabled={!isTimerMode} value={sessionState.aparte.aparteador || ''} onChange={(e) => handleAparteadorUpdate(e.target.value)} style={{ cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>
+              <label style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Selecione o aparteante</label>
+              <select disabled={!isTimerMode} value={sessionState.aparte.aparteante || ''} onChange={(e) => handleAparteanteUpdate(e.target.value)} style={{ cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>
                 <option value="">Aguardando seleção...</option>
                 {speakerOptions.map((opt, i) => (
                   <option key={i} value={opt}>{opt}</option>
@@ -365,6 +368,16 @@ export default function ControlPanel() {
                   value={institutionName} 
                   onChange={(e) => setInstitutionName(e.target.value)} 
                   placeholder="Câmara Municipal de Carneirinho - MG"
+                />
+              </div>
+
+              <div className="input-group">
+                <label>Dados da Sessão</label>
+                <input 
+                  type="text" 
+                  value={sessionInfo} 
+                  onChange={(e) => setSessionInfo(e.target.value)} 
+                  placeholder="Xª ordinária, dd/mm/aaaa"
                 />
               </div>
               

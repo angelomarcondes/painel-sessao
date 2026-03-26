@@ -144,6 +144,7 @@ export default function DisplayPanel() {
            </div>
            <div className="system-title" style={{ textAlign: 'left' }}>
              <h1 style={{color: textColor, margin: 0, fontSize: `${titleFontSize}rem`}}>{institutionName}</h1>
+             <h2 style={{color: textColor, fontWeight: 'bold', margin: '0.5rem 0 0 0'}}>{sessionState.sessionInfo || "Xª ordinária, dd/mm/aaaa"}</h2>
              {sessionState.displayMode !== 'clock' && (
                  <h2 style={{color: textColor, opacity: 0.8, marginTop: '0.5rem'}}>{sessionState.phase || "Sessão Plenária"}</h2>
              )}
@@ -194,9 +195,9 @@ export default function DisplayPanel() {
                         boxShadow: `0 20px 50px ${textColor}1A`,
                         animation: 'slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
                     }}>
-                      <div style={{ color: textColor, opacity: 0.7, fontSize: '1.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>Aparteador</div>
+                      <div style={{ color: textColor, opacity: 0.7, fontSize: '1.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>Aparteante</div>
                       <div style={{ color: textColor, fontSize: '3.5rem', fontWeight: '800', marginBottom: '1rem', textAlign: 'center', lineHeight: '1.2' }}>
-                        {sessionState.aparte.aparteador || 'Aguardando seleção...'}
+                        {sessionState.aparte.aparteante || 'Aguardando seleção...'}
                       </div>
                       <div style={{ color: textColor, fontSize: '8rem', fontWeight: '800', fontVariantNumeric: 'tabular-nums', fontFamily: 'Outfit', lineHeight: '1' }}>
                         {formatTime(displayAparteSeconds)}

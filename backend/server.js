@@ -61,7 +61,7 @@ let sessionState = {
   },
   aparte: {
     isActive: false,
-    aparteador: '',
+    aparteante: '',
     startedAt: null
   },
   phase: '', // Fase da sessão
@@ -69,14 +69,15 @@ let sessionState = {
   timerFontSize: 18,
   speakerFontSize: 4,
   titleFontSize: 2.5,
-  isPanelOpen: false
+  isPanelOpen: false,
+  sessionInfo: 'Xª ordinária, dd/mm/aaaa'
 };
 
 // Tenta carregar configurações persistidas no disco
 if (fs.existsSync(settingsFile)) {
   try {
     const savedSettings = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
-    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'isPanelOpen'];
+    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'isPanelOpen', 'sessionInfo'];
     keysToPersist.forEach(key => {
       if (savedSettings[key] !== undefined) {
         sessionState[key] = savedSettings[key];
@@ -89,7 +90,7 @@ if (fs.existsSync(settingsFile)) {
 
 // Salva as configurações atuais no disco
 function saveSettings() {
-  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize'];
+  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'sessionInfo'];
   const settingsToSave = {};
   keysToPersist.forEach(key => {
     settingsToSave[key] = sessionState[key];
@@ -115,7 +116,7 @@ function checkAndSetTimerFinish() {
       sessionState.phase = '';
       sessionState.activeSpeaker = '';
       sessionState.aparte.isActive = false;
-      sessionState.aparte.aparteador = '';
+      sessionState.aparte.aparteante = '';
       
       io.emit('state_update', sessionState);
     }, sessionState.timer.remaining * 1000);
@@ -179,7 +180,7 @@ io.on('connection', (socket) => {
       
       sessionState.aparte.isActive = true;
       sessionState.aparte.startedAt = Date.now();
-      sessionState.aparte.aparteador = '';
+      sessionState.aparte.aparteante = '';
       
       checkAndSetTimerFinish();
       io.emit('state_update', sessionState);
@@ -200,8 +201,8 @@ io.on('connection', (socket) => {
     }
   });
 
-  socket.on('update_aparteador', (name) => {
-    sessionState.aparte.aparteador = name;
+  socket.on('update_aparteante', (name) => {
+    sessionState.aparte.aparteante = name;
     io.emit('state_update', sessionState);
   });
 
