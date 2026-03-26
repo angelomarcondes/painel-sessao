@@ -64,7 +64,7 @@ let sessionState = {
     aparteador: '',
     startedAt: null
   },
-  phase: 'Pequeno Expediente', // Fase da sessão
+  phase: '', // Fase da sessão
   clockFontSize: 20,
   timerFontSize: 18,
   speakerFontSize: 4,
@@ -102,6 +102,26 @@ function saveSettings() {
   }
 }
 
+let timerTimeout = null;
+
+function checkAndSetTimerFinish() {
+  clearTimeout(timerTimeout);
+  if (sessionState.timer.isRunning && sessionState.timer.remaining > 0) {
+    timerTimeout = setTimeout(() => {
+      sessionState.timer.isRunning = false;
+      sessionState.timer.remaining = 0;
+      sessionState.timer.hasStarted = false;
+      
+      sessionState.phase = '';
+      sessionState.activeSpeaker = '';
+      sessionState.aparte.isActive = false;
+      sessionState.aparte.aparteador = '';
+      
+      io.emit('state_update', sessionState);
+    }, sessionState.timer.remaining * 1000);
+  }
+}
+
 io.on('connection', (socket) => {
   console.log('🔗 Cliente conectado:', socket.id);
 
@@ -123,6 +143,7 @@ io.on('connection', (socket) => {
       sessionState.timer.isRunning = true;
       sessionState.timer.hasStarted = true;
       sessionState.timer.updatedAt = Date.now();
+      checkAndSetTimerFinish();
       io.emit('state_update', sessionState);
     }
   });
@@ -133,6 +154,7 @@ io.on('connection', (socket) => {
     if (remaining <= 0) {
       sessionState.timer.hasStarted = false;
     }
+    checkAndSetTimerFinish();
     io.emit('state_update', sessionState);
   });
 
@@ -145,6 +167,7 @@ io.on('connection', (socket) => {
       sessionState.timer.remaining += duration;
     }
     sessionState.timer.duration = sessionState.timer.remaining;
+    checkAndSetTimerFinish();
     io.emit('state_update', sessionState);
   });
   
@@ -158,6 +181,7 @@ io.on('connection', (socket) => {
       sessionState.aparte.startedAt = Date.now();
       sessionState.aparte.aparteador = '';
       
+      checkAndSetTimerFinish();
       io.emit('state_update', sessionState);
     }
   });
@@ -171,6 +195,7 @@ io.on('connection', (socket) => {
         sessionState.timer.updatedAt = Date.now();
       }
       
+      checkAndSetTimerFinish();
       io.emit('state_update', sessionState);
     }
   });
@@ -192,6 +217,7 @@ io.on('connection', (socket) => {
       sessionState.timer.hasStarted = false;
     }
     
+    checkAndSetTimerFinish();
     io.emit('state_update', sessionState);
   });
 

@@ -13,7 +13,7 @@ export default function ControlPanel() {
 
   // Local form state
   const [speakerName, setSpeakerName] = useState('');
-  const [phase, setPhase] = useState('Pequeno Expediente');
+  const [phase, setPhase] = useState('');
   
   const [institutionName, setInstitutionName] = useState('Câmara Municipal de Carneirinho - MG');
   const [bgColor, setBgColor] = useState('#000000');
@@ -41,7 +41,7 @@ export default function ControlPanel() {
     newSocket.on('state_update', (state) => {
       setSessionState(state);
       setSpeakerName(state.activeSpeaker || '');
-      setPhase(state.phase || 'Pequeno Expediente');
+      setPhase(state.phase || '');
       
       setInstitutionName(state.institutionName || 'Câmara Municipal de Carneirinho - MG');
       setBgColor(state.bgColor || '#000000');
@@ -240,11 +240,11 @@ export default function ControlPanel() {
                    padding: '0.75rem',
                    fontSize: '1rem',
                    fontWeight: 'bold',
-                   cursor: isTimerMode ? 'pointer' : 'not-allowed',
-                   opacity: isTimerMode ? 1 : 0.5
+                   cursor: (isTimerMode && sessionState.timer.remaining > 0 && phase && speakerName) ? 'pointer' : 'not-allowed',
+                   opacity: (isTimerMode && sessionState.timer.remaining > 0 && phase && speakerName) ? 1 : 0.5
                 }} 
                 onClick={startTimer}
-                disabled={!isTimerMode}
+                disabled={!isTimerMode || sessionState.timer.remaining <= 0 || !phase || !speakerName}
               >
                 <Play size={18} /> {sessionState.timer.hasStarted ? 'Continuar' : 'Iniciar'}
               </button>
