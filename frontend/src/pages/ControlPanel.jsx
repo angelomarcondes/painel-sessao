@@ -150,7 +150,18 @@ export default function ControlPanel() {
   const stopAparte = () => socket.emit('stop_aparte');
   const handleAparteadorUpdate = (value) => socket.emit('update_aparteador', value);
   
-  const openDisplay = () => window.open('/painel', '_blank');
+  const handlePanelToggle = () => {
+    if (sessionState.isPanelOpen) {
+      if (sessionState.timer.remaining > 0) {
+        alert("Não é possível fechar o painel enquanto o contador não estiver zerado.");
+        return;
+      }
+      socket.emit('close_panel');
+    } else {
+      window.open('/painel', '_blank');
+      socket.emit('open_panel');
+    }
+  };
   
   const requestFullscreen = () => {
     socket.emit('request_fullscreen');
@@ -180,8 +191,22 @@ export default function ControlPanel() {
         <section className="card" style={{ padding: '1.25rem' }}>
           <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', textAlign: 'left' }}>Controles do Painel</h3>
           <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-             <button onClick={openDisplay} className="btn-primary" style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-               <Monitor size={16} /> Abrir painel
+             <button 
+                onClick={handlePanelToggle} 
+                className={sessionState.isPanelOpen ? "btn-danger" : "btn-primary"} 
+                style={{ 
+                  flex: 1, 
+                  padding: '0.6rem', 
+                  fontSize: '0.9rem', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '0.5rem', 
+                  opacity: (sessionState.isPanelOpen && sessionState.timer.remaining > 0) ? 0.5 : 1 
+                }}
+                disabled={sessionState.isPanelOpen && sessionState.timer.remaining > 0}
+             >
+               <Monitor size={16} /> {sessionState.isPanelOpen ? 'Fechar painel' : 'Abrir painel'}
              </button>
              <button onClick={requestFullscreen} style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                <Maximize size={16} /> Tela cheia

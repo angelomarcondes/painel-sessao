@@ -68,14 +68,15 @@ let sessionState = {
   clockFontSize: 20,
   timerFontSize: 18,
   speakerFontSize: 4,
-  titleFontSize: 2.5
+  titleFontSize: 2.5,
+  isPanelOpen: false
 };
 
 // Tenta carregar configurações persistidas no disco
 if (fs.existsSync(settingsFile)) {
   try {
     const savedSettings = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
-    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize'];
+    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'isPanelOpen'];
     keysToPersist.forEach(key => {
       if (savedSettings[key] !== undefined) {
         sessionState[key] = savedSettings[key];
@@ -193,6 +194,19 @@ io.on('connection', (socket) => {
 
   socket.on('request_fullscreen', () => {
     io.emit('enter_fullscreen');
+  });
+
+  socket.on('open_panel', () => {
+    sessionState.isPanelOpen = true;
+    saveSettings();
+    io.emit('state_update', sessionState);
+  });
+
+  socket.on('close_panel', () => {
+    sessionState.isPanelOpen = false;
+    saveSettings();
+    io.emit('close_panel');
+    io.emit('state_update', sessionState);
   });
 
   socket.on('disconnect', () => {

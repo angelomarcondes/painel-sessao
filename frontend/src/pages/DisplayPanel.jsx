@@ -59,6 +59,10 @@ export default function DisplayPanel() {
       } catch(err) { console.error(err); }
     });
 
+    newSocket.on('close_panel', () => {
+      window.close();
+    });
+
     return () => newSocket.close();
   }, []);
 
