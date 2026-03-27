@@ -29,6 +29,8 @@ export default function ControlPanel() {
   const [timerFontSize, setTimerFontSize] = useState(18);
   const [speakerFontSize, setSpeakerFontSize] = useState(4);
   const [titleFontSize, setTitleFontSize] = useState(2.5);
+  const [aparteTimerFontSize, setAparteTimerFontSize] = useState(8);
+  const [aparteNameFontSize, setAparteNameFontSize] = useState(3.5);
 
   useEffect(() => {
     if (!localStorage.getItem('auth_token')) {
@@ -58,6 +60,8 @@ export default function ControlPanel() {
       setTimerFontSize(state.timerFontSize || 18);
       setSpeakerFontSize(state.speakerFontSize || 4);
       setTitleFontSize(state.titleFontSize || 2.5);
+      setAparteTimerFontSize(state.aparteTimerFontSize || 8);
+      setAparteNameFontSize(state.aparteNameFontSize || 3.5);
       
       // Ajusta dinamicamente a Aba do Chrome quando carregar o state
       if (state.logoUrl) {
@@ -117,7 +121,9 @@ export default function ControlPanel() {
        clockFontSize,
        timerFontSize,
        speakerFontSize,
-       titleFontSize
+       titleFontSize,
+       aparteTimerFontSize,
+       aparteNameFontSize
     });
     alert("Configurações salvas com sucesso!");
     setShowSettings(false); // Recolhe as configurações ao salvar
@@ -432,6 +438,14 @@ export default function ControlPanel() {
                 <div className="input-group" style={{marginBottom: 0}}>
                   <label style={{color: 'var(--text-main)'}}>Nome da Câmara ({titleFontSize}rem)</label>
                   <input type="range" min="1" max="8" step="0.5" value={titleFontSize} onChange={(e) => setTitleFontSize(Number(e.target.value))} style={{padding: 0, height: 'auto', background: 'transparent'}} />
+                </div>
+                <div className="input-group" style={{marginBottom: 0}}>
+                  <label style={{color: 'var(--text-main)'}}>Tempo Aparteante ({aparteTimerFontSize}rem)</label>
+                  <input type="range" min="2" max="15" step="0.5" value={aparteTimerFontSize} onChange={(e) => setAparteTimerFontSize(Number(e.target.value))} style={{padding: 0, height: 'auto', background: 'transparent'}} />
+                </div>
+                <div className="input-group" style={{marginBottom: 0}}>
+                  <label style={{color: 'var(--text-main)'}}>Nome Aparteante ({aparteNameFontSize}rem)</label>
+                  <input type="range" min="1" max="8" step="0.5" value={aparteNameFontSize} onChange={(e) => setAparteNameFontSize(Number(e.target.value))} style={{padding: 0, height: 'auto', background: 'transparent'}} />
                 </div>
               </div>
 

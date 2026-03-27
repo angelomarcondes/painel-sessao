@@ -13,6 +13,7 @@ export default function DisplayPanel() {
   const audioRef = useRef(null);
   
   const previousSecondsRef = useRef(0);
+  const prevIsRunningRef = useRef(false);
   const [timeZeroAt, setTimeZeroAt] = useState(null);
 
   // Relógio do sistema global
@@ -78,7 +79,12 @@ export default function DisplayPanel() {
       }
       
       if (sessionState.aparte?.isActive) {
-        const elapsedAparte = (Date.now() - sessionState.aparte.startedAt) / 1000;
+        let elapsedAparte = sessionState.aparte.elapsed || 0;
+        if (sessionState.timer.isRunning && sessionState.aparte.updatedAt) {
+          elapsedAparte += (Date.now() - sessionState.aparte.updatedAt) / 1000;
+        } else if (sessionState.timer.isRunning && sessionState.aparte.startedAt) {
+          elapsedAparte += (Date.now() - sessionState.aparte.startedAt) / 1000;
+        }
         setDisplayAparteSeconds(elapsedAparte);
       } else {
         setDisplayAparteSeconds(0);
@@ -94,11 +100,8 @@ export default function DisplayPanel() {
   // DISPARO SEGURO DO AUDIO E DO EFEITO PISCANTE
   useEffect(() => {
     if (sessionState && sessionState.displayMode === 'timer') {
-       // Apenas dispara matematicamente se:
-       // 1. Está atualmente ativo correndo
-       // 2. O tempo visualizou um frame anterior MAIOR que zero (se abriu zerado ou de pause, ele começa de 0, então ignorado)
-       // 3. O frame atual bateu ZERO.
-       if (sessionState.timer.isRunning && previousSecondsRef.current > 0 && displaySeconds <= 0) {
+       const wasRunning = prevIsRunningRef.current;
+       if (wasRunning && previousSecondsRef.current > 0 && displaySeconds <= 0) {
           setTimeZeroAt(Date.now()); // Acende o cromômetro visual de 5 segundos do Vermelho
           
           if (audioRef.current && sessionState.audioUrl) {
@@ -109,13 +112,16 @@ export default function DisplayPanel() {
     
     // Rastreador matemático guardando o frame para a próxima rodada do Effect
     previousSecondsRef.current = displaySeconds;
+    if (sessionState?.timer) {
+       prevIsRunningRef.current = sessionState.timer.isRunning;
+    }
   }, [displaySeconds, sessionState]);
 
   if (!sessionState) {
     return <div className="display-loading" style={{color: 'white', background: 'black', height: '100vh', display: 'flex', alignItems:'center', justifyContent: 'center'}}>Aguardando conexão com a mesa operadora...</div>;
   }
 
-  const { bgColor, textColor, logoUrl, audioUrl, clockFontSize = 20, timerFontSize = 18, speakerFontSize = 4, titleFontSize = 2.5 } = sessionState;
+  const { bgColor, textColor, logoUrl, audioUrl, clockFontSize = 20, timerFontSize = 18, speakerFontSize = 4, titleFontSize = 2.5, aparteTimerFontSize = 8, aparteNameFontSize = 3.5 } = sessionState;
   const institutionName = sessionState.institutionName || 'Câmara Municipal de Carneirinho - MG';
 
   const formatTime = (totalSeconds) => {
@@ -196,10 +202,10 @@ export default function DisplayPanel() {
                         animation: 'slideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1)'
                     }}>
                       <div style={{ color: textColor, opacity: 0.7, fontSize: '1.8rem', textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: '0.5rem' }}>Aparteante</div>
-                      <div style={{ color: textColor, fontSize: '3.5rem', fontWeight: '800', marginBottom: '1rem', textAlign: 'center', lineHeight: '1.2' }}>
+                      <div style={{ color: textColor, fontSize: `${aparteNameFontSize}rem`, fontWeight: '800', marginBottom: '1rem', textAlign: 'center', lineHeight: '1.2' }}>
                         {sessionState.aparte.aparteante || 'Aguardando seleção...'}
                       </div>
-                      <div style={{ color: textColor, fontSize: '8rem', fontWeight: '800', fontVariantNumeric: 'tabular-nums', fontFamily: 'Outfit', lineHeight: '1' }}>
+                      <div style={{ color: textColor, fontSize: `${aparteTimerFontSize}rem`, fontWeight: '800', fontVariantNumeric: 'tabular-nums', fontFamily: 'Outfit', lineHeight: '1' }}>
                         {formatTime(displayAparteSeconds)}
                       </div>
                     </div>

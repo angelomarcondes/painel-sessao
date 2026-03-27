@@ -8,6 +8,7 @@
   "phaseList": "Expediente\nOrdem do dia",
   "clockFontSize": 11,
   "timerFontSize": 17,
-  "speakerFontSize": 3,
-  "titleFontSize": 1.5
+  "speakerFontSize": 5,
+  "titleFontSize": 3.5,
+  "sessionInfo": "4ª extraordinária, 27/03/2026."
 }

@@ -62,13 +62,17 @@ let sessionState = {
   aparte: {
     isActive: false,
     aparteante: '',
-    startedAt: null
+    startedAt: null,
+    updatedAt: null,
+    elapsed: 0
   },
   phase: '', // Fase da sessão
   clockFontSize: 20,
   timerFontSize: 18,
   speakerFontSize: 4,
   titleFontSize: 2.5,
+  aparteTimerFontSize: 8,
+  aparteNameFontSize: 3.5,
   isPanelOpen: false,
   sessionInfo: 'Xª ordinária, dd/mm/aaaa'
 };
@@ -77,7 +81,7 @@ let sessionState = {
 if (fs.existsSync(settingsFile)) {
   try {
     const savedSettings = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
-    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'isPanelOpen', 'sessionInfo'];
+    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'aparteTimerFontSize', 'aparteNameFontSize', 'isPanelOpen', 'sessionInfo'];
     keysToPersist.forEach(key => {
       if (savedSettings[key] !== undefined) {
         sessionState[key] = savedSettings[key];
@@ -90,7 +94,7 @@ if (fs.existsSync(settingsFile)) {
 
 // Salva as configurações atuais no disco
 function saveSettings() {
-  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'sessionInfo'];
+  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'aparteTimerFontSize', 'aparteNameFontSize', 'sessionInfo'];
   const settingsToSave = {};
   keysToPersist.forEach(key => {
     settingsToSave[key] = sessionState[key];
@@ -144,6 +148,11 @@ io.on('connection', (socket) => {
       sessionState.timer.isRunning = true;
       sessionState.timer.hasStarted = true;
       sessionState.timer.updatedAt = Date.now();
+      
+      if (sessionState.aparte.isActive) {
+        sessionState.aparte.updatedAt = Date.now();
+      }
+      
       checkAndSetTimerFinish();
       io.emit('state_update', sessionState);
     }
@@ -155,6 +164,13 @@ io.on('connection', (socket) => {
     if (remaining <= 0) {
       sessionState.timer.hasStarted = false;
     }
+    
+    if (sessionState.aparte.isActive) {
+      const elapsedToAdd = (Date.now() - (sessionState.aparte.updatedAt || sessionState.aparte.startedAt)) / 1000;
+      sessionState.aparte.elapsed = (sessionState.aparte.elapsed || 0) + elapsedToAdd;
+      sessionState.aparte.updatedAt = Date.now();
+    }
+    
     checkAndSetTimerFinish();
     io.emit('state_update', sessionState);
   });
@@ -180,6 +196,8 @@ io.on('connection', (socket) => {
       
       sessionState.aparte.isActive = true;
       sessionState.aparte.startedAt = Date.now();
+      sessionState.aparte.updatedAt = Date.now();
+      sessionState.aparte.elapsed = 0;
       sessionState.aparte.aparteante = '';
       
       checkAndSetTimerFinish();
