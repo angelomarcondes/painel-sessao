@@ -6,7 +6,7 @@
   "audioUrl": "/uploads/alarme.mp3",
   "speakerList": "Anderson Domingos de Menezes\nEdna Cristina de Lima\nErica de Souza Queiroz\nFábio Samartino\nJoaquim Madalena Severino de Almeida\nLiz Queli Patrícia Diniz\nMaria Aparecida de Oliveira Queiroz\nValdinei Nunes de Freitas\nWagner Alves da Silva",
   "phaseList": "Expediente\nOrdem do dia",
-  "clockFontSize": 11,
+  "clockFontSize": 12,
   "timerFontSize": 16,
   "speakerFontSize": 5,
   "titleFontSize": 3.5,
