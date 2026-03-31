@@ -57,6 +57,7 @@ let sessionState = {
     remaining: 300,
     isRunning: false,
     hasStarted: false,
+    manualReset: false,
     updatedAt: Date.now()
   },
   aparte: {
@@ -116,6 +117,7 @@ function checkAndSetTimerFinish() {
       sessionState.timer.isRunning = false;
       sessionState.timer.remaining = 0;
       sessionState.timer.hasStarted = false;
+      sessionState.timer.manualReset = false;
       
       sessionState.phase = '';
       sessionState.activeSpeaker = '';
@@ -147,6 +149,7 @@ io.on('connection', (socket) => {
     if (sessionState.timer.remaining > 0) {
       sessionState.timer.isRunning = true;
       sessionState.timer.hasStarted = true;
+      sessionState.timer.manualReset = false;
       sessionState.timer.updatedAt = Date.now();
       
       if (sessionState.aparte.isActive) {
@@ -169,6 +172,25 @@ io.on('connection', (socket) => {
       const elapsedToAdd = (Date.now() - (sessionState.aparte.updatedAt || sessionState.aparte.startedAt)) / 1000;
       sessionState.aparte.elapsed = (sessionState.aparte.elapsed || 0) + elapsedToAdd;
       sessionState.aparte.updatedAt = Date.now();
+    }
+    
+    checkAndSetTimerFinish();
+    io.emit('state_update', sessionState);
+  });
+
+  socket.on('reset_counter', () => {
+    sessionState.timer.isRunning = false;
+    sessionState.timer.remaining = 0;
+    sessionState.timer.hasStarted = false;
+    sessionState.timer.manualReset = true;
+    
+    sessionState.phase = '';
+    sessionState.activeSpeaker = '';
+    
+    if (sessionState.aparte.isActive) {
+      sessionState.aparte.isActive = false;
+      sessionState.aparte.aparteante = '';
+      sessionState.aparte.elapsed = 0;
     }
     
     checkAndSetTimerFinish();
@@ -234,6 +256,7 @@ io.on('connection', (socket) => {
       sessionState.timer.duration = 0;
       sessionState.timer.isRunning = false;
       sessionState.timer.hasStarted = false;
+      sessionState.timer.manualReset = true;
     }
     
     checkAndSetTimerFinish();

@@ -141,14 +141,14 @@ export default function ControlPanel() {
 
   const startTimer = () => socket.emit('start_timer');
 
-  const pauseTimer = (forceZero = false) => {
-    if (forceZero) {
-       socket.emit('pause_timer', 0);
-    } else {
-       const elapsed = Math.floor((Date.now() - sessionState.timer.updatedAt) / 1000);
-       const remaining = Math.max(0, sessionState.timer.remaining - elapsed);
-       socket.emit('pause_timer', remaining);
-    }
+  const pauseTimer = () => {
+    const elapsed = Math.floor((Date.now() - sessionState.timer.updatedAt) / 1000);
+    const remaining = Math.max(0, sessionState.timer.remaining - elapsed);
+    socket.emit('pause_timer', remaining);
+  };
+
+  const resetCounter = () => {
+    socket.emit('reset_counter');
   };
 
   const addTimeSeconds = (seconds) => {
@@ -276,15 +276,15 @@ export default function ControlPanel() {
                     cursor: isTimerMode ? 'pointer' : 'not-allowed',
                     opacity: isTimerMode ? 1 : 0.5
                  }} 
-                 onClick={() => pauseTimer(false)}
+                 onClick={() => pauseTimer()}
                  disabled={!isTimerMode}
               >
                 <Pause size={18} /> Pausar
               </button>
             )}
             
-            <button className="btn-danger" style={{ flex: 1, justifyContent: 'center', cursor: isTimerMode ? 'pointer' : 'not-allowed', opacity: isTimerMode ? 1 : 0.5 }} onClick={() => pauseTimer(true)} disabled={!isTimerMode}>
-              <RotateCcw size={18} /> Zerar Cronômetro
+            <button className="btn-danger" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: isTimerMode ? 'pointer' : 'not-allowed', opacity: isTimerMode ? 1 : 0.5 }} onClick={resetCounter} disabled={!isTimerMode}>
+              <RotateCcw size={18} /> Zerar Contador
             </button>
 
             {!sessionState.aparte?.isActive ? (

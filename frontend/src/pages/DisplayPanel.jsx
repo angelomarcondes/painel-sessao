@@ -102,10 +102,12 @@ export default function DisplayPanel() {
     if (sessionState && sessionState.displayMode === 'timer') {
        const wasRunning = prevIsRunningRef.current;
        if (wasRunning && previousSecondsRef.current > 0 && displaySeconds <= 0) {
-          setTimeZeroAt(Date.now()); // Acende o cromômetro visual de 5 segundos do Vermelho
-          
-          if (audioRef.current && sessionState.audioUrl) {
-             audioRef.current.play().catch(e => console.log('Bloqueado pelo chrome', e));
+          if (!sessionState.timer.manualReset) {
+            setTimeZeroAt(Date.now()); // Acende o cromômetro visual de 5 segundos do Vermelho
+            
+            if (audioRef.current && sessionState.audioUrl) {
+               audioRef.current.play().catch(e => console.log('Bloqueado pelo chrome', e));
+            }
           }
        }
     }
