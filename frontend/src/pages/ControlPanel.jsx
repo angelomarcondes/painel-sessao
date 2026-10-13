@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Play, Pause, RotateCcw, Monitor, Maximize, Settings, ChevronDown, ChevronUp, Sliders, Timer } from 'lucide-react';
+import { Play, Pause, RotateCcw, Monitor, Maximize, Settings, ChevronDown, ChevronUp, Sliders, Timer, Lock, Eye, EyeOff } from 'lucide-react';
 
 export default function ControlPanel() {
   const navigate = useNavigate();
@@ -10,6 +10,8 @@ export default function ControlPanel() {
   
   // UI State
   const [showSettings, setShowSettings] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   // Local form state
   const [speakerName, setSpeakerName] = useState('');
@@ -109,7 +111,7 @@ export default function ControlPanel() {
 
   const handleUpdateSettings = (e) => {
     e.preventDefault();
-    socket.emit('control_update', { 
+    const updatePayload = { 
        institutionName,
        sessionInfo,
        bgColor,
@@ -124,8 +126,21 @@ export default function ControlPanel() {
        titleFontSize,
        aparteTimerFontSize,
        aparteNameFontSize
-    });
-    alert("Configurações salvas com sucesso!");
+    };
+
+    const hasNewPassword = Boolean(newPassword && newPassword.trim().length > 0);
+    if (hasNewPassword) {
+      updatePayload.newPassword = newPassword.trim();
+    }
+
+    socket.emit('control_update', updatePayload);
+
+    if (hasNewPassword) {
+      alert("Configurações e nova senha salvas com sucesso!");
+      setNewPassword('');
+    } else {
+      alert("Configurações salvas com sucesso!");
+    }
     setShowSettings(false); // Recolhe as configurações ao salvar
   };
 
@@ -385,6 +400,43 @@ export default function ControlPanel() {
                   onChange={(e) => setSessionInfo(e.target.value)} 
                   placeholder="Xª ordinária, dd/mm/aaaa"
                 />
+              </div>
+
+              <div className="input-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <Lock size={16} /> Senha de Acesso do Operador
+                </label>
+                <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
+                  <input 
+                    type={showPassword ? "text" : "password"} 
+                    value={newPassword} 
+                    onChange={(e) => setNewPassword(e.target.value)} 
+                    placeholder="Deixe em branco para manter a senha atual"
+                    style={{ paddingRight: '2.5rem' }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    style={{
+                      position: 'absolute',
+                      right: '0.5rem',
+                      background: 'transparent',
+                      border: 'none',
+                      color: 'var(--text-muted)',
+                      padding: '0.4rem',
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center'
+                    }}
+                    title={showPassword ? "Ocultar senha" : "Ver senha"}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
+                <small style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
+                  Para alterar a senha de login do operador, digite a nova senha acima e clique em "Atualizar Configurações".
+                </small>
               </div>
               
               <div className="input-group">

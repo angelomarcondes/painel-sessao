@@ -12,5 +12,7 @@
   "titleFontSize": 3.5,
   "aparteTimerFontSize": 8,
   "aparteNameFontSize": 3.5,
-  "sessionInfo": "4ª extraordinária, 27/03/2026."
+  "sessionInfo": "4ª extraordinária, 27/03/2026.",
+  "adminPassword": "admin123",
+  "lastEnvPassword": "admin123"
 }

@@ -78,6 +78,29 @@ let sessionState = {
   sessionInfo: 'Xª ordinária, dd/mm/aaaa'
 };
 
+// Gerenciamento da senha de acesso (persistida e suportada via ENV)
+let adminPassword = process.env.ADMIN_PASSWORD || 'admin123';
+let lastEnvPassword = null;
+
+// Salva as configurações atuais no disco
+function saveSettings() {
+  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'aparteTimerFontSize', 'aparteNameFontSize', 'sessionInfo'];
+  const settingsToSave = {};
+  keysToPersist.forEach(key => {
+    settingsToSave[key] = sessionState[key];
+  });
+  settingsToSave.adminPassword = adminPassword;
+  if (lastEnvPassword) {
+    settingsToSave.lastEnvPassword = lastEnvPassword;
+  }
+  
+  try {
+    fs.writeFileSync(settingsFile, JSON.stringify(settingsToSave, null, 2), 'utf8');
+  } catch (err) {
+    console.error('Erro ao salvar settings.json:', err);
+  }
+}
+
 // Tenta carregar configurações persistidas no disco
 if (fs.existsSync(settingsFile)) {
   try {
@@ -88,24 +111,24 @@ if (fs.existsSync(settingsFile)) {
         sessionState[key] = savedSettings[key];
       }
     });
+
+    if (savedSettings.adminPassword) {
+      adminPassword = savedSettings.adminPassword;
+    }
+    if (savedSettings.lastEnvPassword) {
+      lastEnvPassword = savedSettings.lastEnvPassword;
+    }
   } catch (err) {
     console.error('Erro ao ler settings.json:', err);
   }
 }
 
-// Salva as configurações atuais no disco
-function saveSettings() {
-  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'aparteTimerFontSize', 'aparteNameFontSize', 'sessionInfo'];
-  const settingsToSave = {};
-  keysToPersist.forEach(key => {
-    settingsToSave[key] = sessionState[key];
-  });
-  
-  try {
-    fs.writeFileSync(settingsFile, JSON.stringify(settingsToSave, null, 2), 'utf8');
-  } catch (err) {
-    console.error('Erro ao salvar settings.json:', err);
-  }
+// Se o usuário especificou ADMIN_PASSWORD no ambiente (via docker-compose -e ou environment)
+// e o valor mudou em relação ao último registrado no ambiente, aplica a nova senha:
+if (process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD !== lastEnvPassword) {
+  adminPassword = process.env.ADMIN_PASSWORD;
+  lastEnvPassword = process.env.ADMIN_PASSWORD;
+  saveSettings();
 }
 
 let timerTimeout = null;
@@ -137,10 +160,16 @@ io.on('connection', (socket) => {
 
   // Recebe atualizações do Painel de Controle
   socket.on('control_update', (newState) => {
+    if (newState.newPassword && typeof newState.newPassword === 'string' && newState.newPassword.trim().length > 0) {
+      adminPassword = newState.newPassword.trim();
+      console.log('🔑 Senha de acesso atualizada pelo painel de controle.');
+    }
+    delete newState.newPassword;
+
     sessionState = { ...sessionState, ...newState };
     // Salva no disco as novas configurações
     saveSettings();
-    // Repassa para todos os clientes (incluindo a Tela de Exibição)
+    // Repassa para todos os clientes (incluindo a Tela de Exibição, sem vazar a senha)
     io.emit('state_update', sessionState);
   });
 
@@ -285,15 +314,26 @@ io.on('connection', (socket) => {
   });
 });
 
-// Autenticação básica (simulada)
+// Autenticação básica
 app.post('/api/login', (req, res) => {
   const { password } = req.body;
-  // Senha mockada para MVP
-  if (password === 'admin123') {
-    res.json({ success: true, token: 'fake-jwt-token-123' });
+  if (password && password === adminPassword) {
+    res.json({ success: true, token: 'painel-session-token-' + Date.now() });
   } else {
-    res.status(401).json({ success: false, message: 'Senha incorreta' });
+    res.status(401).json({ success: false, message: 'Senha incorreta!' });
   }
+});
+
+// Endpoint explícito para alterar senha via API
+app.post('/api/change-password', (req, res) => {
+  const { newPassword } = req.body;
+  if (!newPassword || typeof newPassword !== 'string' || newPassword.trim().length === 0) {
+    return res.status(400).json({ success: false, message: 'A nova senha não pode ser vazia.' });
+  }
+  adminPassword = newPassword.trim();
+  saveSettings();
+  console.log('🔑 Senha de acesso atualizada via API.');
+  res.json({ success: true, message: 'Senha atualizada com sucesso!' });
 });
 
 // Endpoint de Upload para logo e áudio
