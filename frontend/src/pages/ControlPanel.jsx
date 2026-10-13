@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Play, Pause, RotateCcw, Monitor, Maximize, Settings, Sliders, Timer, BellOff } from 'lucide-react';
+import { Play, Pause, RotateCcw, Monitor, Maximize, Settings, Sliders, Timer, Ribbon } from 'lucide-react';
 
 export default function ControlPanel() {
   const navigate = useNavigate();
@@ -179,7 +179,7 @@ export default function ControlPanel() {
                 }}
                 title={sessionState.displayMode === 'silence' ? 'Cancelar minuto de silêncio' : 'Iniciar 1 minuto de silêncio com transição de 30s'}
              >
-               <BellOff size={16} /> {sessionState.displayMode === 'silence' ? 'Cancelar silêncio' : 'Minuto de silêncio'}
+               <Ribbon size={16} /> {sessionState.displayMode === 'silence' ? 'Cancelar silêncio' : 'Minuto de silêncio'}
              </button>
              <button onClick={toggleDisplayMode} className="btn-success" style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                {sessionState.displayMode === 'timer' ? 'Relógio' : 'Contador'}

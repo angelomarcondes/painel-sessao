@@ -48,6 +48,7 @@ let sessionState = {
   bgColor: '#000000',
   textColor: '#ffffff',
   audioUrl: '/uploads/alarme.mp3',
+  silenceAudioUrl: '/uploads/alarme.mp3',
   speakerList: '', // lista separada por linha
   phaseList: 'Expediente\nOrdem do dia', // Default solicitado
   displayMode: 'clock', // Abrir primeiro com relógio, como solicitado
@@ -79,7 +80,7 @@ let sessionState = {
   silence: {
     isActive: false,
     startedAt: null,
-    duration: 60,
+    duration: 61,
     fadeDuration: 30
   }
 };
@@ -90,7 +91,7 @@ let lastEnvPassword = null;
 
 // Salva as configurações atuais no disco
 function saveSettings() {
-  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'aparteTimerFontSize', 'aparteNameFontSize', 'sessionInfo'];
+  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'silenceAudioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'aparteTimerFontSize', 'aparteNameFontSize', 'sessionInfo'];
   const settingsToSave = {};
   keysToPersist.forEach(key => {
     settingsToSave[key] = sessionState[key];
@@ -111,7 +112,7 @@ function saveSettings() {
 if (fs.existsSync(settingsFile)) {
   try {
     const savedSettings = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
-    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'aparteTimerFontSize', 'aparteNameFontSize', 'isPanelOpen', 'sessionInfo'];
+    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'silenceAudioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'aparteTimerFontSize', 'aparteNameFontSize', 'isPanelOpen', 'sessionInfo'];
     keysToPersist.forEach(key => {
       if (savedSettings[key] !== undefined) {
         sessionState[key] = savedSettings[key];
@@ -322,18 +323,18 @@ io.on('connection', (socket) => {
     sessionState.silence = {
       isActive: true,
       startedAt: Date.now(),
-      duration: 60,
+      duration: 61,
       fadeDuration: 30
     };
 
     clearTimeout(silenceTimeout);
-    // 60 segundos de contagem regressiva + 30 segundos de esmaecimento = 90 segundos no total
+    // 61 segundos de contagem regressiva (começa em 01:01) + 30 segundos de esmaecimento = 91 segundos no total
     silenceTimeout = setTimeout(() => {
       sessionState.displayMode = 'clock';
       sessionState.silence.isActive = false;
       sessionState.silence.startedAt = null;
       io.emit('state_update', sessionState);
-    }, (60 + 30) * 1000);
+    }, (61 + 30) * 1000);
 
     io.emit('state_update', sessionState);
   });

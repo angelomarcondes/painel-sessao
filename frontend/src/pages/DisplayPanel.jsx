@@ -10,12 +10,14 @@ export default function DisplayPanel() {
   // Timer visual sync local state
   const [displaySeconds, setDisplaySeconds] = useState(0);
   const [displayAparteSeconds, setDisplayAparteSeconds] = useState(0);
-  const [silenceRemaining, setSilenceRemaining] = useState(60);
+  const [silenceRemaining, setSilenceRemaining] = useState(61);
   const [silenceFadeOpacity, setSilenceFadeOpacity] = useState(1);
   const [isSilenceZero, setIsSilenceZero] = useState(false);
   
   const requestRef = useRef();
   const audioRef = useRef(null);
+  const silenceAudioRef = useRef(null);
+  const silenceAudioPlayedRef = useRef(false);
   
   const previousSecondsRef = useRef(0);
   const prevIsRunningRef = useRef(false);
@@ -140,7 +142,7 @@ export default function DisplayPanel() {
 
       if (sessionState.displayMode === 'silence' && sessionState.silence?.startedAt) {
         const elapsed = (Date.now() - sessionState.silence.startedAt) / 1000;
-        const duration = sessionState.silence.duration || 60;
+        const duration = sessionState.silence.duration || 61;
         const fadeDuration = sessionState.silence.fadeDuration || 30;
 
         if (elapsed < duration) {
@@ -153,11 +155,21 @@ export default function DisplayPanel() {
           const fadeElapsed = elapsed - duration;
           const opacity = Math.max(0, 1 - (fadeElapsed / fadeDuration));
           setSilenceFadeOpacity(opacity);
+
+          if (!silenceAudioPlayedRef.current) {
+            silenceAudioPlayedRef.current = true;
+            if (silenceAudioRef.current) {
+              silenceAudioRef.current.currentTime = 0;
+              silenceAudioRef.current.play().catch(e => console.log('Áudio de silêncio bloqueado pelo navegador:', e));
+            }
+          }
         } else {
           setSilenceRemaining(0);
           setIsSilenceZero(true);
           setSilenceFadeOpacity(0);
         }
+      } else {
+        silenceAudioPlayedRef.current = false;
       }
       
       requestRef.current = requestAnimationFrame(updateTime);
@@ -210,6 +222,11 @@ export default function DisplayPanel() {
   return (
     <div className="display-container" style={{ backgroundColor: bgColor, color: textColor }}>
       {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
+      <audio
+        ref={silenceAudioRef}
+        src={sessionState.silenceAudioUrl || audioUrl || '/uploads/alarme.mp3'}
+        preload="auto"
+      />
 
       <button
         type="button"

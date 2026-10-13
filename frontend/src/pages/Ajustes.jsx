@@ -18,6 +18,7 @@ export default function Ajustes() {
   const [textColor, setTextColor] = useState('#ffffff');
   const [logoUrl, setLogoUrl] = useState('');
   const [audioUrl, setAudioUrl] = useState('');
+  const [silenceAudioUrl, setSilenceAudioUrl] = useState('');
   const [speakerList, setSpeakerList] = useState('');
   const [phaseList, setPhaseList] = useState('Expediente\nOrdem do dia');
 
@@ -47,6 +48,7 @@ export default function Ajustes() {
       setTextColor(state.textColor || '#ffffff');
       setLogoUrl(state.logoUrl || '');
       setAudioUrl(state.audioUrl || '');
+      setSilenceAudioUrl(state.silenceAudioUrl || '');
       setSpeakerList(state.speakerList || '');
       setPhaseList(state.phaseList || 'Expediente\nOrdem do dia');
       setClockFontSize(state.clockFontSize || 20);
@@ -92,9 +94,11 @@ export default function Ajustes() {
       if (data.success) {
         if (type === 'logo') setLogoUrl(data.url);
         if (type === 'audio') setAudioUrl(data.url);
+        if (type === 'silenceAudio') setSilenceAudioUrl(data.url);
 
+        const key = type === 'logo' ? 'logoUrl' : (type === 'silenceAudio' ? 'silenceAudioUrl' : 'audioUrl');
         socket.emit('control_update', {
-          [type === 'logo' ? 'logoUrl' : 'audioUrl']: data.url
+          [key]: data.url
         });
       }
     } catch (err) {
@@ -112,6 +116,7 @@ export default function Ajustes() {
       textColor,
       logoUrl,
       audioUrl,
+      silenceAudioUrl,
       speakerList,
       phaseList,
       clockFontSize,
@@ -308,9 +313,15 @@ export default function Ajustes() {
             </div>
 
             <div className="input-group">
-              <label>Alarme de Fim de Tempo (Áudio)</label>
+              <label>Alarme de Fim de Tempo do Cronômetro (Áudio)</label>
               <input type="file" accept="audio/*" onChange={(e) => handleFileUpload(e, 'audio')} />
-              {audioUrl && <small style={{ color: '#10b981' }}>✔ Áudio carregado com sucesso!</small>}
+              {audioUrl && <small style={{ color: '#10b981' }}>✔ Áudio do alarme do cronômetro carregado com sucesso!</small>}
+            </div>
+
+            <div className="input-group">
+              <label>Aviso Sonoro do Minuto de Silêncio (Áudio)</label>
+              <input type="file" accept="audio/*" onChange={(e) => handleFileUpload(e, 'silenceAudio')} />
+              {silenceAudioUrl && <small style={{ color: '#10b981' }}>✔ Áudio do minuto de silêncio carregado com sucesso!</small>}
             </div>
 
             <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
