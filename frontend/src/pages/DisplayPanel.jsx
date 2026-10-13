@@ -1,9 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { io } from 'socket.io-client';
+import { Maximize, Minimize } from 'lucide-react';
 
 export default function DisplayPanel() {
   const [sessionState, setSessionState] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [isFullscreen, setIsFullscreen] = useState(Boolean(document.fullscreenElement));
   
   // Timer visual sync local state
   const [displaySeconds, setDisplaySeconds] = useState(0);
@@ -21,6 +23,49 @@ export default function DisplayPanel() {
     const int = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(int);
   }, []);
+
+  // Sincronização do estado de Tela Cheia com eventos do navegador
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(Boolean(document.fullscreenElement));
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('mozfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('mozfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      if (document.documentElement.requestFullscreen) {
+        document.documentElement.requestFullscreen().catch((err) => {
+          console.log(`Erro ao entrar em fullscreen: ${err.message}`);
+        });
+      } else if (document.documentElement.webkitRequestFullscreen) {
+        document.documentElement.webkitRequestFullscreen();
+      } else if (document.documentElement.msRequestFullscreen) {
+        document.documentElement.msRequestFullscreen();
+      }
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().catch((err) => {
+          console.log(`Erro ao sair de fullscreen: ${err.message}`);
+        });
+      } else if (document.webkitExitFullscreen) {
+        document.webkitExitFullscreen();
+      } else if (document.msExitFullscreen) {
+        document.msExitFullscreen();
+      }
+    }
+  };
 
   // Web Socket Connection
   useEffect(() => {
@@ -140,6 +185,17 @@ export default function DisplayPanel() {
   return (
     <div className="display-container" style={{ backgroundColor: bgColor, color: textColor }}>
       {audioUrl && <audio ref={audioRef} src={audioUrl} preload="auto" />}
+
+      <button
+        type="button"
+        className="fullscreen-toggle-btn"
+        onClick={toggleFullscreen}
+        title={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
+        aria-label={isFullscreen ? 'Sair da tela cheia' : 'Tela cheia'}
+        style={{ color: textColor, borderColor: `${textColor}33` }}
+      >
+        {isFullscreen ? <Minimize size={20} /> : <Maximize size={20} />}
+      </button>
 
       <div className="display-header" style={{ borderBottom: `1px solid ${textColor}33`, background: `linear-gradient(to bottom, ${textColor}1A, transparent)` }}>
          <div style={{ display: 'flex', alignItems: 'center', gap: '2rem' }}>
