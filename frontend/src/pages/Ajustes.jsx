@@ -142,8 +142,8 @@ export default function Ajustes() {
   };
 
   return (
-    <div className="control-container" style={{ padding: '1rem 2rem' }}>
-      <header className="control-header" style={{ marginBottom: '1.5rem', borderBottom: 'none', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+    <div className="ajustes-container">
+      <header className="control-header" style={{ marginBottom: '1.25rem', borderBottom: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', paddingBottom: '0.75rem' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <button
             onClick={() => navigate('/controle')}
@@ -167,7 +167,7 @@ export default function Ajustes() {
         </button>
       </header>
 
-      <main className="control-content" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '800px', margin: '0 auto' }}>
+      <main style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem', width: '100%' }}>
         {saveSuccess && (
           <div style={{
             backgroundColor: 'rgba(16, 185, 129, 0.15)',
