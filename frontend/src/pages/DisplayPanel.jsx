@@ -10,6 +10,9 @@ export default function DisplayPanel() {
   // Timer visual sync local state
   const [displaySeconds, setDisplaySeconds] = useState(0);
   const [displayAparteSeconds, setDisplayAparteSeconds] = useState(0);
+  const [silenceRemaining, setSilenceRemaining] = useState(60);
+  const [silenceFadeOpacity, setSilenceFadeOpacity] = useState(1);
+  const [isSilenceZero, setIsSilenceZero] = useState(false);
   
   const requestRef = useRef();
   const audioRef = useRef(null);
@@ -134,6 +137,28 @@ export default function DisplayPanel() {
       } else {
         setDisplayAparteSeconds(0);
       }
+
+      if (sessionState.displayMode === 'silence' && sessionState.silence?.startedAt) {
+        const elapsed = (Date.now() - sessionState.silence.startedAt) / 1000;
+        const duration = sessionState.silence.duration || 60;
+        const fadeDuration = sessionState.silence.fadeDuration || 30;
+
+        if (elapsed < duration) {
+          setSilenceRemaining(Math.max(0, duration - elapsed));
+          setIsSilenceZero(false);
+          setSilenceFadeOpacity(1);
+        } else if (elapsed < duration + fadeDuration) {
+          setSilenceRemaining(0);
+          setIsSilenceZero(true);
+          const fadeElapsed = elapsed - duration;
+          const opacity = Math.max(0, 1 - (fadeElapsed / fadeDuration));
+          setSilenceFadeOpacity(opacity);
+        } else {
+          setSilenceRemaining(0);
+          setIsSilenceZero(true);
+          setSilenceFadeOpacity(0);
+        }
+      }
       
       requestRef.current = requestAnimationFrame(updateTime);
     };
@@ -209,13 +234,16 @@ export default function DisplayPanel() {
            <div className="system-title" style={{ textAlign: 'left' }}>
              <h1 style={{color: textColor, margin: 0, fontSize: `${titleFontSize}rem`}}>{institutionName}</h1>
              <h2 style={{color: textColor, fontWeight: 'bold', margin: '0.5rem 0 0 0'}}>{sessionState.sessionInfo || "Xª ordinária, dd/mm/aaaa"}</h2>
-             {sessionState.displayMode !== 'clock' && (
+             {sessionState.displayMode !== 'clock' && sessionState.displayMode !== 'silence' && (
                  <h2 style={{color: textColor, opacity: 0.8, marginTop: '0.5rem'}}>{sessionState.phase || "Sessão Plenária"}</h2>
+             )}
+             {sessionState.displayMode === 'silence' && (
+                 <h2 style={{color: textColor, opacity: 0.8, marginTop: '0.5rem'}}>Solenidade Plenária</h2>
              )}
            </div>
          </div>
          
-         {sessionState.displayMode !== 'clock' && (
+         {sessionState.displayMode === 'timer' && (
              <div className="clock-widget" style={{color: textColor, opacity: 0.6}}>
                {currentTime.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
              </div>
@@ -227,6 +255,57 @@ export default function DisplayPanel() {
              <div className="huge-clock" style={{ color: textColor, fontSize: `${clockFontSize}rem`, fontWeight: 800, fontFamily: 'Outfit', textShadow: `0 10px 40px ${textColor}33`, fontVariantNumeric: 'tabular-nums' }}>
                {currentTime.toLocaleTimeString('pt-BR')}
              </div>
+         ) : sessionState.displayMode === 'silence' ? (
+             !isSilenceZero ? (
+                /* Durante o 1 minuto: contagem regressiva com MINUTO DE SILÊNCIO na parte superior */
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', width: '100%', animation: 'fadeIn 0.5s ease' }}>
+                  <div style={{
+                    color: textColor,
+                    fontSize: `${Math.max(2.5, Math.min(titleFontSize * 1.5, 4.5))}rem`,
+                    fontWeight: 800,
+                    fontFamily: 'Outfit',
+                    letterSpacing: '0.15em',
+                    textTransform: 'uppercase',
+                    marginBottom: '2rem',
+                    textAlign: 'center',
+                    textShadow: `0 4px 30px ${textColor}33`,
+                    opacity: 0.95
+                  }}>
+                    MINUTO DE SILÊNCIO
+                  </div>
+                  <div 
+                    className="huge-timer" 
+                    style={{ 
+                      color: textColor, 
+                      fontSize: `${timerFontSize}rem`, 
+                      textShadow: `0 10px 40px ${textColor}33`,
+                      animation: 'none'
+                    }}
+                  >
+                    {formatTime(silenceRemaining)}
+                  </div>
+                </div>
+             ) : (
+                /* Quando o tempo zerar: MINUTO DE SILÊNCIO ocupa o lugar do relógio e vai esmaecendo ao longo dos 30s */
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', width: '100%', height: '100%', animation: 'fadeIn 0.4s ease' }}>
+                  <div style={{
+                    color: textColor,
+                    fontSize: `${Math.min(clockFontSize, 8.5)}rem`,
+                    fontWeight: 800,
+                    fontFamily: 'Outfit',
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                    textAlign: 'center',
+                    lineHeight: 1.1,
+                    padding: '0 2rem',
+                    textShadow: `0 10px 50px ${textColor}4D`,
+                    opacity: silenceFadeOpacity,
+                    transition: 'opacity 0.25s linear'
+                  }}>
+                    MINUTO DE SILÊNCIO
+                  </div>
+                </div>
+             )
          ) : (
              <>
                <div className="speaker-info">
@@ -277,6 +356,8 @@ export default function DisplayPanel() {
          <div className="status-bar" style={{color: textColor, opacity: 0.7}}>
             {sessionState.displayMode === 'clock' 
                 ? "Exibindo Hora Local" 
+                : sessionState.displayMode === 'silence'
+                ? (isSilenceZero ? "Homenagem Póstuma • Concluindo" : "Minuto de Silêncio em Andamento")
                 : (sessionState.timer.isRunning ? "Tempo em andamento" : "Temporizador Pausado")}
          </div>
       </div>

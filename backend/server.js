@@ -75,7 +75,13 @@ let sessionState = {
   aparteTimerFontSize: 8,
   aparteNameFontSize: 3.5,
   isPanelOpen: false,
-  sessionInfo: 'Xª ordinária, dd/mm/aaaa'
+  sessionInfo: 'Xª ordinária, dd/mm/aaaa',
+  silence: {
+    isActive: false,
+    startedAt: null,
+    duration: 60,
+    fadeDuration: 30
+  }
 };
 
 // Gerenciamento da senha de acesso (persistida e suportada via ENV)
@@ -132,6 +138,7 @@ if (process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD !== lastEnvPassword
 }
 
 let timerTimeout = null;
+let silenceTimeout = null;
 
 function checkAndSetTimerFinish() {
   clearTimeout(timerTimeout);
@@ -208,6 +215,12 @@ io.on('connection', (socket) => {
   });
 
   socket.on('reset_counter', () => {
+    clearTimeout(silenceTimeout);
+    if (sessionState.silence) {
+      sessionState.silence.isActive = false;
+      sessionState.silence.startedAt = null;
+    }
+
     sessionState.timer.isRunning = false;
     sessionState.timer.remaining = 0;
     sessionState.timer.hasStarted = false;
@@ -277,6 +290,12 @@ io.on('connection', (socket) => {
 
   // Substitui a troca no front por troca no backend, assim garantimos o zeramento global
   socket.on('toggle_mode', () => {
+    clearTimeout(silenceTimeout);
+    if (sessionState.silence) {
+      sessionState.silence.isActive = false;
+      sessionState.silence.startedAt = null;
+    }
+
     sessionState.displayMode = sessionState.displayMode === 'timer' ? 'clock' : 'timer';
     
     // Zera o cronometro ao entrar no modo timer, como solicitado
@@ -289,6 +308,41 @@ io.on('connection', (socket) => {
     }
     
     checkAndSetTimerFinish();
+    io.emit('state_update', sessionState);
+  });
+
+  // Eventos do Minuto de Silêncio
+  socket.on('start_silence', () => {
+    // Interrompe qualquer cronômetro e aparte em andamento
+    sessionState.timer.isRunning = false;
+    sessionState.aparte.isActive = false;
+    clearTimeout(timerTimeout);
+
+    sessionState.displayMode = 'silence';
+    sessionState.silence = {
+      isActive: true,
+      startedAt: Date.now(),
+      duration: 60,
+      fadeDuration: 30
+    };
+
+    clearTimeout(silenceTimeout);
+    // 60 segundos de contagem regressiva + 30 segundos de esmaecimento = 90 segundos no total
+    silenceTimeout = setTimeout(() => {
+      sessionState.displayMode = 'clock';
+      sessionState.silence.isActive = false;
+      sessionState.silence.startedAt = null;
+      io.emit('state_update', sessionState);
+    }, (60 + 30) * 1000);
+
+    io.emit('state_update', sessionState);
+  });
+
+  socket.on('stop_silence', () => {
+    clearTimeout(silenceTimeout);
+    sessionState.displayMode = 'clock';
+    sessionState.silence.isActive = false;
+    sessionState.silence.startedAt = null;
     io.emit('state_update', sessionState);
   });
 

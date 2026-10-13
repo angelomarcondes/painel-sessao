@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Play, Pause, RotateCcw, Monitor, Maximize, Settings, Sliders, Timer } from 'lucide-react';
+import { Play, Pause, RotateCcw, Monitor, Maximize, Settings, Sliders, Timer, BellOff } from 'lucide-react';
 
 export default function ControlPanel() {
   const navigate = useNavigate();
@@ -98,6 +98,14 @@ export default function ControlPanel() {
     socket.emit('toggle_mode'); 
   };
 
+  const handleSilenceToggle = () => {
+    if (sessionState.displayMode === 'silence') {
+      socket.emit('stop_silence');
+    } else {
+      socket.emit('start_silence');
+    }
+  };
+
   const speakerOptions = speakerList.split('\n').filter(s => s.trim() !== '');
   const phaseOptions = phaseList.split('\n').filter(s => s.trim() !== '');
 
@@ -150,6 +158,28 @@ export default function ControlPanel() {
              </button>
              <button onClick={requestFullscreen} style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                <Maximize size={16} /> Tela cheia
+             </button>
+             <button 
+                onClick={handleSilenceToggle} 
+                style={{ 
+                  flex: 1, 
+                  padding: '0.6rem', 
+                  fontSize: '0.9rem', 
+                  backgroundColor: sessionState.displayMode === 'silence' ? '#0284c7' : '#334155', 
+                  color: 'white', 
+                  border: sessionState.displayMode === 'silence' ? '1px solid #38bdf8' : 'none', 
+                  borderRadius: '8px', 
+                  cursor: 'pointer', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '0.5rem',
+                  fontWeight: '500',
+                  boxShadow: sessionState.displayMode === 'silence' ? '0 0 12px rgba(2, 132, 199, 0.5)' : 'none'
+                }}
+                title={sessionState.displayMode === 'silence' ? 'Cancelar minuto de silêncio' : 'Iniciar 1 minuto de silêncio com transição de 30s'}
+             >
+               <BellOff size={16} /> {sessionState.displayMode === 'silence' ? 'Cancelar silêncio' : 'Minuto de silêncio'}
              </button>
              <button onClick={toggleDisplayMode} className="btn-success" style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
                {sessionState.displayMode === 'timer' ? 'Relógio' : 'Contador'}
