@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
 import { Play, Pause, RotateCcw, Monitor, Maximize, Settings, Sliders, Timer, Ribbon } from 'lucide-react';
+import PanelPreview from '../components/PanelPreview';
 
 export default function ControlPanel() {
   const navigate = useNavigate();
@@ -133,6 +134,9 @@ export default function ControlPanel() {
 
       <main className="control-content" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '800px', margin: '0 auto' }}>
         
+        {/* === RETORNO / MINIATURA EM TEMPO REAL DO PAINEL === */}
+        <PanelPreview sessionState={sessionState} />
+
         {/* === CONTROLES DO PAINEL === */}
         <section className="card" style={{ padding: '1.25rem' }}>
           <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start' }}>
