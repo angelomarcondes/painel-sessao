@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Tv, ChevronDown, ChevronUp } from 'lucide-react';
+import { Tv } from 'lucide-react';
 
 export default function PanelPreview({ sessionState }) {
   const [currentTime, setCurrentTime] = useState(new Date());
@@ -9,10 +9,9 @@ export default function PanelPreview({ sessionState }) {
   const [silenceFadeOpacity, setSilenceFadeOpacity] = useState(1);
   const [isSilenceZero, setIsSilenceZero] = useState(false);
   const [timeZeroAt, setTimeZeroAt] = useState(null);
-  const [isCollapsed, setIsCollapsed] = useState(false);
 
-  const containerRef = useRef(null);
-  const [scale, setScale] = useState(0.4);
+  const screenWrapperRef = useRef(null);
+  const [scale, setScale] = useState(0.35);
   const requestRef = useRef();
 
   const previousSecondsRef = useRef(0);
@@ -24,24 +23,27 @@ export default function PanelPreview({ sessionState }) {
     return () => clearInterval(int);
   }, []);
 
-  // Responsividade: cálculo dinâmico da escala 1920x1080 proporcional ao card
+  // Responsividade: cálculo dinâmico da escala 1920x1080 proporcional à largura e altura disponíveis
   useEffect(() => {
-    if (!containerRef.current) return;
+    if (!screenWrapperRef.current) return;
     const updateScale = () => {
-      if (containerRef.current) {
-        const w = containerRef.current.clientWidth;
-        if (w > 0) {
+      if (screenWrapperRef.current) {
+        const w = screenWrapperRef.current.clientWidth;
+        const h = screenWrapperRef.current.clientHeight;
+        if (w > 0 && h > 0) {
+          setScale(Math.min(w / 1920, h / 1080));
+        } else if (w > 0) {
           setScale(w / 1920);
         }
       }
     };
     updateScale();
     const ro = new ResizeObserver(updateScale);
-    ro.observe(containerRef.current);
+    ro.observe(screenWrapperRef.current);
     return () => ro.disconnect();
-  }, [isCollapsed]);
+  }, []);
 
-  // Sincronização direta de mudanças quando não estiver rodando
+  // Sincronização direta de mudanças quando o contador não estiver rodando
   useEffect(() => {
     if (!sessionState?.timer?.isRunning) {
       setDisplaySeconds(sessionState?.timer?.remaining || 0);
@@ -51,7 +53,7 @@ export default function PanelPreview({ sessionState }) {
     }
   }, [sessionState?.timer?.isRunning, sessionState?.timer?.remaining]);
 
-  // Loop de animação contínuo para o cronômetro, aparte e minuto de silêncio
+  // Loop de animação contínuo a 60fps para sincronia perfeita
   useEffect(() => {
     if (!sessionState) return;
 
@@ -150,12 +152,12 @@ export default function PanelPreview({ sessionState }) {
   const isTimeUpFlashing = timeZeroAt && (Date.now() - timeZeroAt < 5000) && displaySeconds <= 0;
 
   return (
-    <section className="card" style={{ padding: '0.85rem 1.15rem', marginBottom: '0.25rem', overflow: 'hidden' }}>
+    <section className="card" style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', padding: '0.85rem 1rem', overflow: 'hidden', boxSizing: 'border-box' }}>
       {/* Header do Monitor de Retorno */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: isCollapsed ? 0 : '0.75rem' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem', flexShrink: 0 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
           <Tv size={17} style={{ color: '#38bdf8' }} />
-          <h3 style={{ margin: 0, fontSize: '0.95rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <h3 style={{ margin: 0, fontSize: '0.92rem', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             Retorno do Painel
           </h3>
           <span style={{
@@ -165,57 +167,55 @@ export default function PanelPreview({ sessionState }) {
             background: 'rgba(239, 68, 68, 0.15)',
             border: '1px solid rgba(239, 68, 68, 0.35)',
             color: '#ef4444',
-            padding: '0.15rem 0.5rem',
+            padding: '0.12rem 0.45rem',
             borderRadius: '999px',
             fontSize: '0.68rem',
             fontWeight: 700,
             letterSpacing: '0.05em'
           }}>
-            <span style={{ width: '7px', height: '7px', borderRadius: '50%', background: '#ef4444', animation: 'livePulse 1.5s infinite' }} />
+            <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#ef4444', animation: 'livePulse 1.5s infinite' }} />
             AO VIVO
           </span>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          <span style={{
-            fontSize: '0.75rem',
-            color: 'var(--text-muted)',
-            background: 'rgba(255, 255, 255, 0.05)',
-            border: '1px solid var(--border-color)',
-            padding: '0.2rem 0.5rem',
-            borderRadius: '6px'
-          }}>
-            Modo: <strong style={{ color: 'var(--text-main)' }}>
-              {sessionState.displayMode === 'clock' ? 'Relógio' : sessionState.displayMode === 'silence' ? 'Minuto de Silêncio' : 'Contador'}
-            </strong>
-          </span>
-
-          <button
-            type="button"
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className="btn-ghost"
-            style={{ padding: '0.25rem 0.5rem', display: 'flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.75rem' }}
-            title={isCollapsed ? 'Expandir miniatura' : 'Recolher miniatura'}
-          >
-            {isCollapsed ? <ChevronDown size={15} /> : <ChevronUp size={15} />}
-            {isCollapsed ? 'Expandir' : 'Recolher'}
-          </button>
-        </div>
+        <span style={{
+          fontSize: '0.72rem',
+          color: 'var(--text-muted)',
+          background: 'rgba(255, 255, 255, 0.05)',
+          border: '1px solid var(--border-color)',
+          padding: '0.18rem 0.45rem',
+          borderRadius: '6px'
+        }}>
+          Modo: <strong style={{ color: 'var(--text-main)' }}>
+            {sessionState.displayMode === 'clock' ? 'Relógio' : sessionState.displayMode === 'silence' ? 'Minuto de Silêncio' : 'Contador'}
+          </strong>
+        </span>
       </div>
 
-      {/* Frame de Miniatura / Broadcast Monitor */}
-      {!isCollapsed && (
+      {/* Área Flexível para acomodar o monitor 16:9 sem estourar altura */}
+      <div
+        ref={screenWrapperRef}
+        style={{
+          flex: 1,
+          minHeight: 0,
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          overflow: 'hidden'
+        }}
+      >
         <div
-          ref={containerRef}
           style={{
-            width: '100%',
+            width: `${Math.round(1920 * scale)}px`,
             height: `${Math.round(1080 * scale)}px`,
             position: 'relative',
             overflow: 'hidden',
-            borderRadius: '10px',
+            borderRadius: '8px',
             backgroundColor: bgColor,
             border: '2px solid rgba(255, 255, 255, 0.15)',
-            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 0, 0, 0.6)'
+            boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5), inset 0 0 15px rgba(0, 0, 0, 0.6)',
+            flexShrink: 0
           }}
         >
           <div
@@ -392,7 +392,36 @@ export default function PanelPreview({ sessionState }) {
             </div>
           </div>
         </div>
-      )}
+      </div>
+
+      {/* Barra de Status Compacta no Rodapé da Coluna Esquerda */}
+      <div style={{
+        marginTop: '0.5rem',
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '0.4rem',
+        fontSize: '0.78rem',
+        flexShrink: 0
+      }}>
+        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+          <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.68rem', textTransform: 'uppercase' }}>Modo Ativo</span>
+          <strong style={{ color: 'var(--text-main)', fontSize: '0.8rem' }}>
+            {sessionState.displayMode === 'clock' ? 'Relógio' : sessionState.displayMode === 'silence' ? 'Silêncio' : 'Contador'}
+          </strong>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+          <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.68rem', textTransform: 'uppercase' }}>Orador no Painel</span>
+          <strong style={{ color: 'var(--text-main)', fontSize: '0.8rem' }} title={sessionState.activeSpeaker || 'Nenhum'}>
+            {sessionState.activeSpeaker || 'Nenhum'}
+          </strong>
+        </div>
+        <div style={{ background: 'rgba(255,255,255,0.03)', padding: '0.35rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)', textAlign: 'center' }}>
+          <span style={{ color: 'var(--text-muted)', display: 'block', fontSize: '0.68rem', textTransform: 'uppercase' }}>Janela Painel</span>
+          <strong style={{ color: sessionState.isPanelOpen ? '#10b981' : '#f59e0b', fontSize: '0.8rem' }}>
+            {sessionState.isPanelOpen ? '● Aberta' : '○ Fechada'}
+          </strong>
+        </div>
+      </div>
     </section>
   );
 }

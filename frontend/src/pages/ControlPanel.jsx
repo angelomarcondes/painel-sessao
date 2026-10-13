@@ -113,161 +113,268 @@ export default function ControlPanel() {
   const isTimerMode = sessionState.displayMode === 'timer';
 
   return (
-    <div className="control-container" style={{ padding: '1rem 2rem' }}>
-      <header className="control-header" style={{ marginBottom: '1rem', borderBottom: 'none' }}>
-        <h2 style={{ fontSize: '1.25rem' }}>Painel de Operador</h2>
+    <div className="control-container">
+      <header className="control-header">
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <h2 style={{ fontSize: '1.15rem', margin: 0, fontWeight: 700 }}>Painel de Operador</h2>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-muted)', background: 'rgba(255,255,255,0.05)', padding: '0.15rem 0.5rem', borderRadius: '6px', border: '1px solid var(--border-color)' }}>
+            {sessionState.institutionName || 'Câmara Municipal'}
+          </span>
+        </div>
         <div className="header-actions" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
            <button 
              onClick={() => navigate('/ajustes')} 
              className="btn-ghost" 
-             style={{ padding: '0.4rem 0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+             style={{ padding: '0.35rem 0.6rem', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
              title="Ajustes e configurações"
              aria-label="Ajustes e configurações"
            >
-             <Settings size={20} />
+             <Settings size={18} />
            </button>
-           <button onClick={() => { localStorage.removeItem('auth_token'); navigate('/login'); }} className="btn-ghost" style={{ padding: '0.4rem 1rem' }}>
+           <button onClick={() => { localStorage.removeItem('auth_token'); navigate('/login'); }} className="btn-ghost" style={{ padding: '0.35rem 0.85rem', fontSize: '0.85rem' }}>
              Sair
            </button>
         </div>
       </header>
 
-      <main className="control-content" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', maxWidth: '800px', margin: '0 auto' }}>
+      <main className="control-content">
         
-        {/* === RETORNO / MINIATURA EM TEMPO REAL DO PAINEL === */}
+        {/* === LADO ESQUERDO: RETORNO EM TEMPO REAL DO PAINEL === */}
         <PanelPreview sessionState={sessionState} />
 
-        {/* === CONTROLES DO PAINEL === */}
-        <section className="card" style={{ padding: '1.25rem' }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '0.75rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start' }}>
-            <Sliders size={18} /> Controles do Painel
-          </h3>
-          <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-             <button 
-                onClick={handlePanelToggle} 
-                className={sessionState.isPanelOpen ? "btn-danger" : "btn-primary"} 
-                style={{ 
-                  flex: 1, 
-                  padding: '0.6rem', 
-                  fontSize: '0.9rem', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  gap: '0.5rem', 
-                  opacity: (sessionState.isPanelOpen && sessionState.timer.remaining > 0) ? 0.5 : 1 
-                }}
-                disabled={sessionState.isPanelOpen && sessionState.timer.remaining > 0}
-             >
-               <Monitor size={16} /> {sessionState.isPanelOpen ? 'Fechar painel' : 'Abrir painel'}
-             </button>
-             <button onClick={requestFullscreen} style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem', backgroundColor: '#8b5cf6', color: 'white', border: 'none', borderRadius: '8px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-               <Maximize size={16} /> Tela cheia
-             </button>
-             <button 
-                onClick={handleSilenceToggle} 
-                style={{ 
-                  flex: 1, 
-                  padding: '0.6rem', 
-                  fontSize: '0.9rem', 
-                  backgroundColor: sessionState.displayMode === 'silence' ? '#0284c7' : '#334155', 
-                  color: 'white', 
-                  border: sessionState.displayMode === 'silence' ? '1px solid #38bdf8' : 'none', 
-                  borderRadius: '8px', 
-                  cursor: 'pointer', 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  justifyContent: 'center', 
-                  gap: '0.5rem',
-                  fontWeight: '500',
-                  boxShadow: sessionState.displayMode === 'silence' ? '0 0 12px rgba(2, 132, 199, 0.5)' : 'none'
-                }}
-                title={sessionState.displayMode === 'silence' ? 'Cancelar minuto de silêncio' : 'Iniciar 1 minuto de silêncio com transição de 30s'}
-             >
-               <Ribbon size={16} /> {sessionState.displayMode === 'silence' ? 'Cancelar silêncio' : 'Minuto de silêncio'}
-             </button>
-             <button onClick={toggleDisplayMode} className="btn-success" style={{ flex: 1, padding: '0.6rem', fontSize: '0.9rem', fontWeight: 'bold', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
-               {sessionState.displayMode === 'timer' ? 'Relógio' : 'Contador'}
-             </button>
+        {/* === LADO DIREITO: CONTROLES DO PAINEL E CRONÔMETRO === */}
+        <section className="card" style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', padding: '0.9rem 1.15rem', overflowY: 'auto', boxSizing: 'border-box' }}>
+          
+          {/* Seção 1: Controles da Janela do Painel */}
+          <div>
+            <h3 style={{ fontSize: '0.88rem', margin: '0 0 0.4rem 0', display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-main)', fontWeight: 600 }}>
+              <Sliders size={16} /> Controles do Painel
+            </h3>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.45rem' }}>
+               <button 
+                  onClick={handlePanelToggle} 
+                  className={sessionState.isPanelOpen ? "btn-danger" : "btn-primary"} 
+                  style={{ 
+                    padding: '0.5rem 0.35rem', 
+                    fontSize: '0.82rem', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '0.35rem', 
+                    opacity: (sessionState.isPanelOpen && sessionState.timer.remaining > 0) ? 0.5 : 1,
+                    whiteSpace: 'nowrap'
+                  }}
+                  disabled={sessionState.isPanelOpen && sessionState.timer.remaining > 0}
+                  title={sessionState.isPanelOpen ? 'Fechar janela do painel' : 'Abrir janela do painel'}
+               >
+                 <Monitor size={15} /> {sessionState.isPanelOpen ? 'Fechar painel' : 'Abrir painel'}
+               </button>
+               <button 
+                  onClick={requestFullscreen} 
+                  style={{ 
+                    padding: '0.5rem 0.35rem', 
+                    fontSize: '0.82rem', 
+                    backgroundColor: '#8b5cf6', 
+                    color: 'white', 
+                    border: 'none', 
+                    borderRadius: '8px', 
+                    cursor: 'pointer', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '0.35rem',
+                    whiteSpace: 'nowrap'
+                  }}
+               >
+                 <Maximize size={15} /> Tela cheia
+               </button>
+               <button 
+                  onClick={handleSilenceToggle} 
+                  style={{ 
+                    padding: '0.5rem 0.35rem', 
+                    fontSize: '0.82rem', 
+                    backgroundColor: sessionState.displayMode === 'silence' ? '#0284c7' : '#334155', 
+                    color: 'white', 
+                    border: sessionState.displayMode === 'silence' ? '1px solid #38bdf8' : 'none', 
+                    borderRadius: '8px', 
+                    cursor: 'pointer', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '0.35rem',
+                    fontWeight: '500',
+                    boxShadow: sessionState.displayMode === 'silence' ? '0 0 12px rgba(2, 132, 199, 0.5)' : 'none',
+                    whiteSpace: 'nowrap'
+                  }}
+                  title={sessionState.displayMode === 'silence' ? 'Cancelar minuto de silêncio' : 'Iniciar 1 minuto de silêncio com transição de 30s'}
+               >
+                 <Ribbon size={15} /> {sessionState.displayMode === 'silence' ? 'Cancelar' : 'Silêncio'}
+               </button>
+               <button 
+                  onClick={toggleDisplayMode} 
+                  className="btn-success" 
+                  style={{ 
+                    padding: '0.5rem 0.35rem', 
+                    fontSize: '0.82rem', 
+                    fontWeight: 'bold', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    gap: '0.35rem',
+                    whiteSpace: 'nowrap'
+                  }}
+               >
+                 {sessionState.displayMode === 'timer' ? 'Relógio' : 'Contador'}
+               </button>
+            </div>
           </div>
-        </section>
 
-        {/* === CONTROLES DO CONTADOR === */}
-        <section className="card timer-controls" style={{ padding: '1.5rem' }}>
-          <h3 style={{ fontSize: '1rem', marginBottom: '1.5rem', display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'flex-start' }}>
-            <Timer size={18} /> Controles do Contador
-          </h3>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,0.07)', margin: '0.1rem 0' }} />
 
-          <div className="control-buttons" style={{ marginBottom: '1.5rem', display: 'flex', gap: '0.5rem' }}>
-            {!sessionState.timer.isRunning ? (
-              <button 
-                className={sessionState.timer.hasStarted ? "" : "btn-success"} 
-                style={{ 
-                  flex: 1, 
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center', 
-                  gap: '0.5rem',
-                  backgroundColor: sessionState.timer.hasStarted ? '#eab308' : '', 
-                  color: sessionState.timer.hasStarted ? 'black' : '',
-                  border: 'none',
-                  borderRadius: '8px',
-                   padding: '0.75rem',
-                   fontSize: '1rem',
-                   fontWeight: 'bold',
-                   cursor: (isTimerMode && sessionState.timer.remaining > 0 && phase && speakerName) ? 'pointer' : 'not-allowed',
-                   opacity: (isTimerMode && sessionState.timer.remaining > 0 && phase && speakerName) ? 1 : 0.5
-                }} 
-                onClick={startTimer}
-                disabled={!isTimerMode || sessionState.timer.remaining <= 0 || !phase || !speakerName}
-              >
-                <Play size={18} /> {sessionState.timer.hasStarted ? 'Continuar' : 'Iniciar'}
-              </button>
-            ) : (
-              <button 
-                 className="btn-warning" 
-                 style={{ 
-                    flex: 1, 
+          {/* Seção 2: Controles do Contador */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.4rem' }}>
+              <h3 style={{ fontSize: '0.88rem', margin: 0, display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-main)', fontWeight: 600 }}>
+                <Timer size={16} /> Controles do Contador
+              </h3>
+              {sessionState.displayMode === 'timer' && (
+                <span style={{ 
+                  fontSize: '0.72rem', 
+                  padding: '0.15rem 0.5rem', 
+                  borderRadius: '999px',
+                  background: sessionState.timer.isRunning ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                  color: sessionState.timer.isRunning ? 'var(--success)' : 'var(--warning)',
+                  fontWeight: 600
+                }}>
+                  {sessionState.timer.isRunning ? 'Em Andamento' : 'Pausado'}
+                </span>
+              )}
+            </div>
+
+            <div style={{ display: 'flex', gap: '0.45rem', width: '100%' }}>
+              {!sessionState.timer.isRunning ? (
+                <button 
+                  className={sessionState.timer.hasStarted ? "" : "btn-success"} 
+                  style={{ 
+                    flex: 1.2, 
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center', 
-                    gap: '0.5rem',
-                    backgroundColor: '#f97316', 
-                    color: 'white',
+                    gap: '0.4rem',
+                    backgroundColor: sessionState.timer.hasStarted ? '#eab308' : '', 
+                    color: sessionState.timer.hasStarted ? 'black' : '',
                     border: 'none',
-                    cursor: isTimerMode ? 'pointer' : 'not-allowed',
-                    opacity: isTimerMode ? 1 : 0.5
-                 }} 
-                 onClick={() => pauseTimer()}
-                 disabled={!isTimerMode}
-              >
-                <Pause size={18} /> Pausar
-              </button>
-            )}
-            
-            <button className="btn-danger" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', cursor: isTimerMode ? 'pointer' : 'not-allowed', opacity: isTimerMode ? 1 : 0.5 }} onClick={resetCounter} disabled={!isTimerMode}>
-              <RotateCcw size={18} /> Zerar Contador
-            </button>
-
-            {!sessionState.aparte?.isActive ? (
+                    borderRadius: '8px',
+                    padding: '0.52rem 0.75rem',
+                    fontSize: '0.88rem',
+                    fontWeight: 'bold',
+                    cursor: (isTimerMode && sessionState.timer.remaining > 0 && phase && speakerName) ? 'pointer' : 'not-allowed',
+                    opacity: (isTimerMode && sessionState.timer.remaining > 0 && phase && speakerName) ? 1 : 0.5
+                  }} 
+                  onClick={startTimer}
+                  disabled={!isTimerMode || sessionState.timer.remaining <= 0 || !phase || !speakerName}
+                >
+                  <Play size={16} /> {sessionState.timer.hasStarted ? 'Continuar' : 'Iniciar'}
+                </button>
+              ) : (
+                <button 
+                   className="btn-warning" 
+                   style={{ 
+                      flex: 1.2, 
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center', 
+                      gap: '0.4rem',
+                      backgroundColor: '#f97316', 
+                      color: 'white',
+                      border: 'none',
+                      padding: '0.52rem 0.75rem',
+                      fontSize: '0.88rem',
+                      cursor: isTimerMode ? 'pointer' : 'not-allowed',
+                      opacity: isTimerMode ? 1 : 0.5
+                   }} 
+                   onClick={() => pauseTimer()}
+                   disabled={!isTimerMode}
+                >
+                  <Pause size={16} /> Pausar
+                </button>
+              )}
+              
               <button 
-                className={(!sessionState.timer.isRunning || sessionState.timer.remaining <= 0) ? "btn-secondary" : "btn-primary"} 
-                style={{ flex: 1, justifyContent: 'center', opacity: (!isTimerMode || !sessionState.timer.isRunning || sessionState.timer.remaining <= 0) ? 0.5 : 1, cursor: (!isTimerMode || !sessionState.timer.isRunning || sessionState.timer.remaining <= 0) ? 'not-allowed' : 'pointer' }} 
-                onClick={startAparte}
-                disabled={!isTimerMode || !sessionState.timer.isRunning || sessionState.timer.remaining <= 0}
+                className="btn-danger" 
+                style={{ 
+                  flex: 1, 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center', 
+                  gap: '0.4rem', 
+                  padding: '0.52rem 0.75rem',
+                  fontSize: '0.88rem',
+                  cursor: isTimerMode ? 'pointer' : 'not-allowed', 
+                  opacity: isTimerMode ? 1 : 0.5 
+                }} 
+                onClick={resetCounter} 
+                disabled={!isTimerMode}
               >
-                Aparte
+                <RotateCcw size={16} /> Zerar
               </button>
-            ) : (
-              <button className="btn-danger" style={{ flex: 1, justifyContent: 'center', cursor: isTimerMode ? 'pointer' : 'not-allowed', opacity: isTimerMode ? 1 : 0.5 }} onClick={stopAparte} disabled={!isTimerMode}>
-                Parar Aparte
-              </button>
-            )}
+
+              {!sessionState.aparte?.isActive ? (
+                <button 
+                  className={(!sessionState.timer.isRunning || sessionState.timer.remaining <= 0) ? "btn-secondary" : "btn-primary"} 
+                  style={{ 
+                    flex: 1, 
+                    justifyContent: 'center', 
+                    padding: '0.52rem 0.75rem',
+                    fontSize: '0.88rem',
+                    opacity: (!isTimerMode || !sessionState.timer.isRunning || sessionState.timer.remaining <= 0) ? 0.5 : 1, 
+                    cursor: (!isTimerMode || !sessionState.timer.isRunning || sessionState.timer.remaining <= 0) ? 'not-allowed' : 'pointer' 
+                  }} 
+                  onClick={startAparte}
+                  disabled={!isTimerMode || !sessionState.timer.isRunning || sessionState.timer.remaining <= 0}
+                >
+                  Aparte
+                </button>
+              ) : (
+                <button 
+                  className="btn-danger" 
+                  style={{ 
+                    flex: 1, 
+                    justifyContent: 'center', 
+                    padding: '0.52rem 0.75rem',
+                    fontSize: '0.88rem',
+                    cursor: isTimerMode ? 'pointer' : 'not-allowed', 
+                    opacity: isTimerMode ? 1 : 0.5 
+                  }} 
+                  onClick={stopAparte} 
+                  disabled={!isTimerMode}
+                >
+                  Parar Aparte
+                </button>
+              )}
+            </div>
           </div>
-          
+
+          {/* Caixa de Aparteante (quando aparte estiver ativo) */}
           {sessionState.aparte?.isActive && (
-            <div className="input-group" style={{ marginBottom: '1.5rem', textAlign: 'left', width: '100%', border: '1px solid var(--primary)', padding: '1rem', borderRadius: '8px', background: 'rgba(59, 130, 246, 0.1)', opacity: isTimerMode ? 1 : 0.5 }}>
-              <label style={{ color: 'var(--primary)', fontWeight: 'bold' }}>Selecione o aparteante</label>
-              <select disabled={!isTimerMode} value={sessionState.aparte.aparteante || ''} onChange={(e) => handleAparteanteUpdate(e.target.value)} style={{ cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>
+            <div style={{
+              width: '100%',
+              textAlign: 'left',
+              border: '1px solid var(--primary)',
+              padding: '0.45rem 0.65rem',
+              borderRadius: '8px',
+              background: 'rgba(59, 130, 246, 0.12)',
+              opacity: isTimerMode ? 1 : 0.5
+            }}>
+              <label style={{ color: 'var(--primary)', fontWeight: 'bold', fontSize: '0.78rem', display: 'block', marginBottom: '0.2rem' }}>
+                Selecione o Aparteante:
+              </label>
+              <select 
+                disabled={!isTimerMode} 
+                value={sessionState.aparte.aparteante || ''} 
+                onChange={(e) => handleAparteanteUpdate(e.target.value)} 
+                style={{ width: '100%', padding: '0.4rem', fontSize: '0.84rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}
+              >
                 <option value="">Aguardando seleção...</option>
                 {speakerOptions.map((opt, i) => (
                   <option key={i} value={opt}>{opt}</option>
@@ -275,41 +382,62 @@ export default function ControlPanel() {
               </select>
             </div>
           )}
-          
-          <div style={{ width: '100%', textAlign: 'left', opacity: isTimerMode ? 1 : 0.5 }}>
-             <div className="input-group" style={{ marginBottom: '1rem' }}>
-               <label>Fase da Sessão</label>
-               <select disabled={!isTimerMode} value={phase} onChange={(e) => handleDropdownUpdate('phase', e.target.value)} style={{ cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>
-                 <option value="">Selecione a Fase...</option>
-                 {phaseOptions.map((opt, i) => (
-                    <option key={i} value={opt}>{opt}</option>
-                 ))}
-               </select>
-             </div>
-             
-             <div className="input-group" style={{ marginBottom: 0 }}>
-               <label>Nome do Orador</label>
-               <select disabled={!isTimerMode} value={speakerName} onChange={(e) => handleDropdownUpdate('speaker', e.target.value)} style={{ cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>
-                 <option value="">Selecione o Orador...</option>
-                 {speakerOptions.map((opt, i) => (
-                    <option key={i} value={opt}>{opt}</option>
-                 ))}
-               </select>
-             </div>
+
+          {/* Seção 3: Seleção de Fase e Orador lado a lado */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.6rem', width: '100%', textAlign: 'left', opacity: isTimerMode ? 1 : 0.5 }}>
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label style={{ fontSize: '0.78rem', marginBottom: '0.2rem' }}>Fase da Sessão</label>
+              <select 
+                disabled={!isTimerMode} 
+                value={phase} 
+                onChange={(e) => handleDropdownUpdate('phase', e.target.value)} 
+                style={{ padding: '0.42rem 0.5rem', fontSize: '0.84rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}
+              >
+                <option value="">Selecione a Fase...</option>
+                {phaseOptions.map((opt, i) => (
+                  <option key={i} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="input-group" style={{ marginBottom: 0 }}>
+              <label style={{ fontSize: '0.78rem', marginBottom: '0.2rem' }}>Nome do Orador</label>
+              <select 
+                disabled={!isTimerMode} 
+                value={speakerName} 
+                onChange={(e) => handleDropdownUpdate('speaker', e.target.value)} 
+                style={{ padding: '0.42rem 0.5rem', fontSize: '0.84rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}
+              >
+                <option value="">Selecione o Orador...</option>
+                {speakerOptions.map((opt, i) => (
+                  <option key={i} value={opt}>{opt}</option>
+                ))}
+              </select>
+            </div>
           </div>
-          
-          <div style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', width: '100%', borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: '1.5rem', opacity: isTimerMode ? 1 : 0.5 }}>
-             <label style={{ textAlign: 'left', fontSize: '0.85rem', color: '#94a3b8', marginBottom: '0.5rem' }}>+ Adicionar Tempos:</label>
-             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.5rem' }}>
-                 <button disabled={!isTimerMode} onClick={() => addTimeSeconds(5)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 5s</button>
-                 <button disabled={!isTimerMode} onClick={() => addTimeSeconds(30)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 30s</button>
-                 <button disabled={!isTimerMode} onClick={() => addTimeSeconds(60)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 1m</button>
-                 <button disabled={!isTimerMode} onClick={() => addTimeSeconds(120)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 2m</button>
-                 <button disabled={!isTimerMode} onClick={() => addTimeSeconds(180)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 3m</button>
-                 <button disabled={!isTimerMode} onClick={() => addTimeSeconds(300)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 5m</button>
-                 <button disabled={!isTimerMode} onClick={() => addTimeSeconds(600)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 10m</button>
-                 <button disabled={!isTimerMode} onClick={() => addTimeSeconds(900)} className="btn-outline" style={{ padding: '0.5rem', fontSize: '0.85rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 15m</button>
-             </div>
+
+          {/* Seção 4: Adicionar Tempos */}
+          <div style={{ 
+            display: 'flex', 
+            flexDirection: 'column', 
+            width: '100%', 
+            borderTop: '1px solid rgba(255,255,255,0.07)', 
+            paddingTop: '0.45rem', 
+            opacity: isTimerMode ? 1 : 0.5 
+          }}>
+            <label style={{ textAlign: 'left', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.3rem' }}>
+              + Adicionar Tempos ao Contador:
+            </label>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.38rem' }}>
+              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(5)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 5s</button>
+              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(30)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 30s</button>
+              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(60)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 1m</button>
+              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(120)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 2m</button>
+              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(180)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 3m</button>
+              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(300)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 5m</button>
+              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(600)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 10m</button>
+              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(900)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 15m</button>
+            </div>
           </div>
         </section>
 
