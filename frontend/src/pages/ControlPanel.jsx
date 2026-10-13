@@ -143,7 +143,7 @@ export default function ControlPanel() {
         <PanelPreview sessionState={sessionState} />
 
         {/* === LADO DIREITO: CONTROLES DO PAINEL E CRONÔMETRO === */}
-        <section className="card" style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', padding: '0.9rem 1.15rem', overflowY: 'auto', boxSizing: 'border-box' }}>
+        <section className="card" style={{ height: '100%', minHeight: 0, display: 'flex', flexDirection: 'column', gap: '0.65rem', padding: '0.9rem 1.15rem', overflowY: 'auto', overflowX: 'hidden', boxSizing: 'border-box' }}>
           
           {/* Seção 1: Controles da Janela do Painel */}
           <div>
@@ -251,12 +251,13 @@ export default function ControlPanel() {
               )}
             </div>
 
-            <div style={{ display: 'flex', gap: '0.45rem', width: '100%' }}>
+            <div style={{ display: 'flex', gap: '0.45rem', width: '100%', boxSizing: 'border-box' }}>
               {!sessionState.timer.isRunning ? (
                 <button 
                   className={sessionState.timer.hasStarted ? "" : "btn-success"} 
                   style={{ 
-                    flex: 1.2, 
+                    flex: '1.2 1 0',
+                    minWidth: 0, 
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center', 
@@ -265,7 +266,7 @@ export default function ControlPanel() {
                     color: sessionState.timer.hasStarted ? 'black' : '',
                     border: 'none',
                     borderRadius: '8px',
-                    padding: '0.52rem 0.75rem',
+                    padding: '0.52rem 0.5rem',
                     fontSize: '0.88rem',
                     fontWeight: 'bold',
                     cursor: (isTimerMode && sessionState.timer.remaining > 0 && phase && speakerName) ? 'pointer' : 'not-allowed',
@@ -280,7 +281,8 @@ export default function ControlPanel() {
                 <button 
                    className="btn-warning" 
                    style={{ 
-                      flex: 1.2, 
+                      flex: '1.2 1 0',
+                      minWidth: 0,
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center', 
@@ -288,7 +290,7 @@ export default function ControlPanel() {
                       backgroundColor: '#f97316', 
                       color: 'white',
                       border: 'none',
-                      padding: '0.52rem 0.75rem',
+                      padding: '0.52rem 0.5rem',
                       fontSize: '0.88rem',
                       cursor: isTimerMode ? 'pointer' : 'not-allowed',
                       opacity: isTimerMode ? 1 : 0.5
@@ -303,12 +305,13 @@ export default function ControlPanel() {
               <button 
                 className="btn-danger" 
                 style={{ 
-                  flex: 1, 
+                  flex: '1 1 0',
+                  minWidth: 0,
                   display: 'flex', 
                   alignItems: 'center', 
                   justifyContent: 'center', 
                   gap: '0.4rem', 
-                  padding: '0.52rem 0.75rem',
+                  padding: '0.52rem 0.5rem',
                   fontSize: '0.88rem',
                   cursor: isTimerMode ? 'pointer' : 'not-allowed', 
                   opacity: isTimerMode ? 1 : 0.5 
@@ -323,9 +326,10 @@ export default function ControlPanel() {
                 <button 
                   className={(!sessionState.timer.isRunning || sessionState.timer.remaining <= 0) ? "btn-secondary" : "btn-primary"} 
                   style={{ 
-                    flex: 1, 
+                    flex: '1 1 0',
+                    minWidth: 0,
                     justifyContent: 'center', 
-                    padding: '0.52rem 0.75rem',
+                    padding: '0.52rem 0.5rem',
                     fontSize: '0.88rem',
                     opacity: (!isTimerMode || !sessionState.timer.isRunning || sessionState.timer.remaining <= 0) ? 0.5 : 1, 
                     cursor: (!isTimerMode || !sessionState.timer.isRunning || sessionState.timer.remaining <= 0) ? 'not-allowed' : 'pointer' 
@@ -339,12 +343,14 @@ export default function ControlPanel() {
                 <button 
                   className="btn-danger" 
                   style={{ 
-                    flex: 1, 
+                    flex: '1 1 0',
+                    minWidth: 0,
                     justifyContent: 'center', 
-                    padding: '0.52rem 0.75rem',
+                    padding: '0.52rem 0.5rem',
                     fontSize: '0.88rem',
                     cursor: isTimerMode ? 'pointer' : 'not-allowed', 
-                    opacity: isTimerMode ? 1 : 0.5 
+                    opacity: isTimerMode ? 1 : 0.5,
+                    whiteSpace: 'nowrap'
                   }} 
                   onClick={stopAparte} 
                   disabled={!isTimerMode}
@@ -359,6 +365,8 @@ export default function ControlPanel() {
           {sessionState.aparte?.isActive && (
             <div style={{
               width: '100%',
+              maxWidth: '100%',
+              boxSizing: 'border-box',
               textAlign: 'left',
               border: '1px solid var(--primary)',
               padding: '0.45rem 0.65rem',
@@ -373,7 +381,7 @@ export default function ControlPanel() {
                 disabled={!isTimerMode} 
                 value={sessionState.aparte.aparteante || ''} 
                 onChange={(e) => handleAparteanteUpdate(e.target.value)} 
-                style={{ width: '100%', padding: '0.4rem', fontSize: '0.84rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}
+                style={{ width: '100%', maxWidth: '100%', boxSizing: 'border-box', padding: '0.4rem', fontSize: '0.84rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}
               >
                 <option value="">Aguardando seleção...</option>
                 {speakerOptions.map((opt, i) => (
