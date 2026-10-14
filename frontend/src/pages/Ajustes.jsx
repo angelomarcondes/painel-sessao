@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { io } from 'socket.io-client';
-import { Settings, ArrowLeft, Lock, Eye, EyeOff, Save, CheckCircle } from 'lucide-react';
+import { Settings, ArrowLeft, Lock, Eye, EyeOff, Save, CheckCircle, Clock } from 'lucide-react';
 
 export default function Ajustes() {
   const navigate = useNavigate();
@@ -12,6 +12,7 @@ export default function Ajustes() {
   // Estados dos formulários de ajustes
   const [institutionName, setInstitutionName] = useState('Câmara Municipal de Carneirinho - MG');
   const [sessionInfo, setSessionInfo] = useState('Xª ordinária, dd/mm/aaaa');
+  const [inactivityTimeout, setInactivityTimeout] = useState(0);
   const [newPassword, setNewPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [bgColor, setBgColor] = useState('#000000');
@@ -44,6 +45,7 @@ export default function Ajustes() {
       setSessionState(state);
       setInstitutionName(state.institutionName || '');
       setSessionInfo(state.sessionInfo || 'Xª ordinária, dd/mm/aaaa');
+      setInactivityTimeout(state.inactivityTimeout !== undefined ? state.inactivityTimeout : 0);
       setBgColor(state.bgColor || '#000000');
       setTextColor(state.textColor || '#ffffff');
       setLogoUrl(state.logoUrl || '');
@@ -112,6 +114,7 @@ export default function Ajustes() {
     const updatePayload = {
       institutionName,
       sessionInfo,
+      inactivityTimeout: Math.max(0, parseInt(inactivityTimeout, 10) || 0),
       bgColor,
       textColor,
       logoUrl,
@@ -205,6 +208,26 @@ export default function Ajustes() {
                 onChange={(e) => setSessionInfo(e.target.value)}
                 placeholder="Xª ordinária, dd/mm/aaaa"
               />
+            </div>
+
+            <div className="input-group">
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                <Clock size={16} /> Tempo de Inatividade do Contador (em minutos)
+              </label>
+              <input
+                type="number"
+                min="0"
+                step="1"
+                value={inactivityTimeout}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setInactivityTimeout(val === '' ? '' : Math.max(0, parseInt(val, 10) || 0));
+                }}
+                placeholder="0 para desativar"
+              />
+              <small style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginTop: '0.25rem', display: 'block' }}>
+                Tempo sem atividade no contador para retornar automaticamente ao relógio (defina em minutos inteiros; 0 desativa o retorno automático).
+              </small>
             </div>
 
             <div className="input-group">

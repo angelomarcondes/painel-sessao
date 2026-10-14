@@ -77,6 +77,7 @@ let sessionState = {
   aparteNameFontSize: 3.5,
   isPanelOpen: false,
   sessionInfo: 'Xª ordinária, dd/mm/aaaa',
+  inactivityTimeout: 0, // em minutos inteiros (0 = desativado)
   silence: {
     isActive: false,
     startedAt: null,
@@ -91,7 +92,7 @@ let lastEnvPassword = null;
 
 // Salva as configurações atuais no disco
 function saveSettings() {
-  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'silenceAudioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'aparteTimerFontSize', 'aparteNameFontSize', 'sessionInfo'];
+  const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'silenceAudioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'aparteTimerFontSize', 'aparteNameFontSize', 'sessionInfo', 'inactivityTimeout'];
   const settingsToSave = {};
   keysToPersist.forEach(key => {
     settingsToSave[key] = sessionState[key];
@@ -112,7 +113,7 @@ function saveSettings() {
 if (fs.existsSync(settingsFile)) {
   try {
     const savedSettings = JSON.parse(fs.readFileSync(settingsFile, 'utf8'));
-    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'silenceAudioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'aparteTimerFontSize', 'aparteNameFontSize', 'isPanelOpen', 'sessionInfo'];
+    const keysToPersist = ['institutionName', 'logoUrl', 'bgColor', 'textColor', 'audioUrl', 'silenceAudioUrl', 'speakerList', 'phaseList', 'clockFontSize', 'timerFontSize', 'speakerFontSize', 'titleFontSize', 'aparteTimerFontSize', 'aparteNameFontSize', 'isPanelOpen', 'sessionInfo', 'inactivityTimeout'];
     keysToPersist.forEach(key => {
       if (savedSettings[key] !== undefined) {
         sessionState[key] = savedSettings[key];
@@ -140,6 +141,11 @@ if (process.env.ADMIN_PASSWORD && process.env.ADMIN_PASSWORD !== lastEnvPassword
 
 let timerTimeout = null;
 let silenceTimeout = null;
+let lastActivityTime = Date.now();
+
+function recordActivity() {
+  lastActivityTime = Date.now();
+}
 
 function checkAndSetTimerFinish() {
   clearTimeout(timerTimeout);
@@ -155,6 +161,7 @@ function checkAndSetTimerFinish() {
       sessionState.aparte.isActive = false;
       sessionState.aparte.aparteante = '';
       
+      recordActivity(); // Inicia a contagem de inatividade logo após o encerramento do cronômetro
       io.emit('state_update', sessionState);
     }, sessionState.timer.remaining * 1000);
   }
@@ -168,6 +175,10 @@ io.on('connection', (socket) => {
 
   // Recebe atualizações do Painel de Controle
   socket.on('control_update', (newState) => {
+    recordActivity();
+    if (newState.inactivityTimeout !== undefined) {
+      newState.inactivityTimeout = Math.max(0, parseInt(newState.inactivityTimeout, 10) || 0);
+    }
     if (newState.newPassword && typeof newState.newPassword === 'string' && newState.newPassword.trim().length > 0) {
       adminPassword = newState.newPassword.trim();
       console.log('🔑 Senha de acesso atualizada pelo painel de controle.');
@@ -183,6 +194,7 @@ io.on('connection', (socket) => {
 
   // Operações específicas do cronômetro para garantir precisão
   socket.on('start_timer', () => {
+    recordActivity();
     if (sessionState.timer.remaining > 0) {
       sessionState.timer.isRunning = true;
       sessionState.timer.hasStarted = true;
@@ -199,6 +211,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('pause_timer', (remaining) => {
+    recordActivity();
     sessionState.timer.isRunning = false;
     sessionState.timer.remaining = remaining;
     if (remaining <= 0) {
@@ -216,6 +229,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('reset_counter', () => {
+    recordActivity();
     clearTimeout(silenceTimeout);
     if (sessionState.silence) {
       sessionState.silence.isActive = false;
@@ -241,6 +255,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('add_time', (duration) => {
+    recordActivity();
     if (sessionState.timer.isRunning) {
       const elapsed = (Date.now() - sessionState.timer.updatedAt) / 1000;
       sessionState.timer.remaining = Math.max(0, sessionState.timer.remaining - elapsed) + duration;
@@ -254,6 +269,7 @@ io.on('connection', (socket) => {
   });
   
   socket.on('start_aparte', () => {
+    recordActivity();
     if (sessionState.timer.remaining > 0 && sessionState.timer.isRunning) {
       const elapsed = (Date.now() - sessionState.timer.updatedAt) / 1000;
       sessionState.timer.remaining = Math.max(0, sessionState.timer.remaining - elapsed);
@@ -271,6 +287,7 @@ io.on('connection', (socket) => {
   });
 
   socket.on('stop_aparte', () => {
+    recordActivity();
     if (sessionState.aparte.isActive) {
       sessionState.aparte.isActive = false;
       if (sessionState.timer.isRunning) {
@@ -285,12 +302,14 @@ io.on('connection', (socket) => {
   });
 
   socket.on('update_aparteante', (name) => {
+    recordActivity();
     sessionState.aparte.aparteante = name;
     io.emit('state_update', sessionState);
   });
 
   // Substitui a troca no front por troca no backend, assim garantimos o zeramento global
   socket.on('toggle_mode', () => {
+    recordActivity();
     clearTimeout(silenceTimeout);
     if (sessionState.silence) {
       sessionState.silence.isActive = false;
@@ -364,10 +383,48 @@ io.on('connection', (socket) => {
     io.emit('state_update', sessionState);
   });
 
+  socket.on('panel_activity', () => {
+    recordActivity();
+  });
+
   socket.on('disconnect', () => {
     console.log('❌ Cliente desconectado:', socket.id);
   });
 });
+
+// Monitoramento do tempo de inatividade no contador para retornar automaticamente ao relógio
+setInterval(() => {
+  if (sessionState.displayMode === 'timer') {
+    // Se o contador estiver correndo, atualiza a atividade continuamente
+    if (sessionState.timer.isRunning) {
+      recordActivity();
+      return;
+    }
+
+    const timeoutMinutes = parseInt(sessionState.inactivityTimeout, 10) || 0;
+    if (timeoutMinutes > 0) {
+      const idleMillis = Date.now() - lastActivityTime;
+      if (idleMillis >= timeoutMinutes * 60 * 1000) {
+        console.log(`⏰ Inatividade no contador (${timeoutMinutes} min sem ações). Retornando automaticamente ao relógio.`);
+        sessionState.displayMode = 'clock';
+        sessionState.timer.isRunning = false;
+        sessionState.timer.remaining = 0;
+        sessionState.timer.hasStarted = false;
+        sessionState.timer.manualReset = true;
+        sessionState.phase = '';
+        sessionState.activeSpeaker = '';
+        if (sessionState.aparte) {
+          sessionState.aparte.isActive = false;
+          sessionState.aparte.aparteante = '';
+          sessionState.aparte.elapsed = 0;
+        }
+        clearTimeout(timerTimeout);
+        recordActivity();
+        io.emit('state_update', sessionState);
+      }
+    }
+  }
+}, 3000);
 
 // Autenticação básica
 app.post('/api/login', (req, res) => {
