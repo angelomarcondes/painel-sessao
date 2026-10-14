@@ -251,12 +251,6 @@ export default function DisplayPanel() {
            <div className="system-title" style={{ textAlign: 'left' }}>
              <h1 style={{color: textColor, margin: 0, fontSize: `${titleFontSize}rem`}}>{institutionName}</h1>
              <h2 style={{color: textColor, fontWeight: 'bold', margin: '0.5rem 0 0 0'}}>{sessionState.sessionInfo || "Xª ordinária, dd/mm/aaaa"}</h2>
-             {sessionState.displayMode !== 'clock' && sessionState.displayMode !== 'silence' && (
-                 <h2 style={{color: textColor, opacity: 0.8, marginTop: '0.5rem'}}>{sessionState.phase || "Sessão Plenária"}</h2>
-             )}
-             {sessionState.displayMode === 'silence' && (
-                 <h2 style={{color: textColor, opacity: 0.8, marginTop: '0.5rem'}}>Solenidade Plenária</h2>
-             )}
            </div>
          </div>
          
@@ -325,10 +319,34 @@ export default function DisplayPanel() {
              )
          ) : (
              <>
-               <div className="speaker-info">
+               <div className="speaker-info" style={{ marginBottom: '2.5rem' }}>
                   <h3 style={{color: textColor, opacity: 0.5}}>Orador Atual</h3>
                   <div className="speaker-name" style={{color: textColor, fontSize: `${speakerFontSize}rem`}}>
                     {sessionState.activeSpeaker || "Nenhum orador ativo"}
+                  </div>
+                  <div 
+                    className="session-phase-badge"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginTop: '1.25rem',
+                      padding: '0.35rem 1.6rem',
+                      borderRadius: '999px',
+                      background: `${textColor}0D`,
+                      border: `1px solid ${textColor}26`,
+                      backdropFilter: 'blur(8px)',
+                      color: textColor,
+                      opacity: 0.85,
+                      fontSize: `${Math.max(1.4, speakerFontSize * 0.5)}rem`,
+                      fontWeight: 600,
+                      fontFamily: 'Outfit',
+                      letterSpacing: '0.12em',
+                      textTransform: 'uppercase',
+                      boxShadow: `0 4px 20px ${textColor}0A`
+                    }}
+                  >
+                    {sessionState.phase || "Sessão Plenária"}
                   </div>
                </div>
       
