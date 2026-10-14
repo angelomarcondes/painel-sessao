@@ -14,7 +14,7 @@
   "aparteTimerFontSize": 5.5,
   "aparteNameFontSize": 3,
   "sessionInfo": "4ª ordinária, 27/03/2026.",
-  "inactivityTimeout": 2,
+  "inactivityTimeout": 1,
   "adminPassword": "445588",
   "lastEnvPassword": "admin123"
 }

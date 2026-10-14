@@ -73,6 +73,10 @@ export default function ControlPanel() {
   const addTimeSeconds = (seconds) => {
     socket.emit('add_time', seconds);
   };
+
+  const clearTime = () => {
+    socket.emit('clear_time');
+  };
   
   const startAparte = () => socket.emit('start_aparte');
   const stopAparte = () => socket.emit('stop_aparte');
@@ -103,6 +107,7 @@ export default function ControlPanel() {
   const phaseOptions = phaseList.split('\n').filter(s => s.trim() !== '');
 
   const isTimerMode = sessionState.displayMode === 'timer';
+  const canAddTime = isTimerMode && !sessionState.timer.isRunning && !sessionState.timer.hasStarted;
 
   return (
     <div className="control-container">
@@ -421,20 +426,37 @@ export default function ControlPanel() {
             width: '100%', 
             borderTop: '1px solid rgba(255,255,255,0.07)', 
             paddingTop: '0.45rem', 
-            opacity: isTimerMode ? 1 : 0.5 
+            opacity: canAddTime ? 1 : 0.5 
           }}>
             <label style={{ textAlign: 'left', fontSize: '0.75rem', color: '#94a3b8', marginBottom: '0.3rem' }}>
               + Adicionar Tempos ao Contador:
             </label>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.38rem' }}>
-              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(5)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 5s</button>
-              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(30)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 30s</button>
-              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(60)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 1m</button>
-              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(120)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 2m</button>
-              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(180)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 3m</button>
-              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(300)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 5m</button>
-              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(600)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 10m</button>
-              <button disabled={!isTimerMode} onClick={() => addTimeSeconds(900)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: isTimerMode ? 'pointer' : 'not-allowed' }}>+ 15m</button>
+              <button disabled={!canAddTime} onClick={() => addTimeSeconds(5)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: canAddTime ? 'pointer' : 'not-allowed' }}>+ 5s</button>
+              <button disabled={!canAddTime} onClick={() => addTimeSeconds(30)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: canAddTime ? 'pointer' : 'not-allowed' }}>+ 30s</button>
+              <button disabled={!canAddTime} onClick={() => addTimeSeconds(60)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: canAddTime ? 'pointer' : 'not-allowed' }}>+ 1m</button>
+              <button disabled={!canAddTime} onClick={() => addTimeSeconds(120)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: canAddTime ? 'pointer' : 'not-allowed' }}>+ 2m</button>
+              <button disabled={!canAddTime} onClick={() => addTimeSeconds(180)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: canAddTime ? 'pointer' : 'not-allowed' }}>+ 3m</button>
+              <button disabled={!canAddTime} onClick={() => addTimeSeconds(300)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: canAddTime ? 'pointer' : 'not-allowed' }}>+ 5m</button>
+              <button disabled={!canAddTime} onClick={() => addTimeSeconds(600)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: canAddTime ? 'pointer' : 'not-allowed' }}>+ 10m</button>
+              <button disabled={!canAddTime} onClick={() => addTimeSeconds(900)} className="btn-outline" style={{ padding: '0.38rem 0.2rem', fontSize: '0.8rem', cursor: canAddTime ? 'pointer' : 'not-allowed' }}>+ 15m</button>
+              <button 
+                disabled={!canAddTime} 
+                onClick={clearTime} 
+                className="btn-outline" 
+                style={{ 
+                  gridColumn: 'span 4', 
+                  padding: '0.38rem 0.2rem', 
+                  fontSize: '0.8rem', 
+                  cursor: canAddTime ? 'pointer' : 'not-allowed',
+                  color: canAddTime ? '#f87171' : '',
+                  borderColor: canAddTime ? 'rgba(239, 68, 68, 0.35)' : '',
+                  background: canAddTime ? 'rgba(239, 68, 68, 0.05)' : ''
+                }}
+                title="Limpar tempo do contador"
+              >
+                Limpar tempo
+              </button>
             </div>
           </div>
         </section>

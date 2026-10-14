@@ -256,14 +256,25 @@ io.on('connection', (socket) => {
 
   socket.on('add_time', (duration) => {
     recordActivity();
-    if (sessionState.timer.isRunning) {
-      const elapsed = (Date.now() - sessionState.timer.updatedAt) / 1000;
-      sessionState.timer.remaining = Math.max(0, sessionState.timer.remaining - elapsed) + duration;
-      sessionState.timer.updatedAt = Date.now();
-    } else {
-      sessionState.timer.remaining += duration;
+    // Bloqueia adição de tempo se o cronômetro já tiver sido iniciado (rodando ou pausado)
+    if (sessionState.timer.isRunning || sessionState.timer.hasStarted) {
+      return;
     }
+    sessionState.timer.remaining += duration;
     sessionState.timer.duration = sessionState.timer.remaining;
+    checkAndSetTimerFinish();
+    io.emit('state_update', sessionState);
+  });
+
+  socket.on('clear_time', () => {
+    recordActivity();
+    // Bloqueia limpar tempo se o cronômetro já tiver sido iniciado (rodando ou pausado)
+    if (sessionState.timer.isRunning || sessionState.timer.hasStarted) {
+      return;
+    }
+    sessionState.timer.remaining = 0;
+    sessionState.timer.duration = 0;
+    sessionState.timer.manualReset = true;
     checkAndSetTimerFinish();
     io.emit('state_update', sessionState);
   });
