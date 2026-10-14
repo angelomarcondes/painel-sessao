@@ -406,8 +406,8 @@ io.on('connection', (socket) => {
 // Monitoramento do tempo de inatividade no contador para retornar automaticamente ao relógio
 setInterval(() => {
   if (sessionState.displayMode === 'timer') {
-    // Se o contador estiver correndo, atualiza a atividade continuamente
-    if (sessionState.timer.isRunning) {
+    // Se o contador estiver contando tempo OU estiver pausado, considera atividade ativa (NÃO retorna ao relógio)
+    if (sessionState.timer.isRunning || sessionState.timer.hasStarted) {
       recordActivity();
       return;
     }
@@ -416,7 +416,7 @@ setInterval(() => {
     if (timeoutMinutes > 0) {
       const idleMillis = Date.now() - lastActivityTime;
       if (idleMillis >= timeoutMinutes * 60 * 1000) {
-        console.log(`⏰ Inatividade no contador (${timeoutMinutes} min sem ações). Retornando automaticamente ao relógio.`);
+        console.log(`⏰ Inatividade total no contador (${timeoutMinutes} min sem ações). Retornando automaticamente ao relógio.`);
         sessionState.displayMode = 'clock';
         sessionState.timer.isRunning = false;
         sessionState.timer.remaining = 0;
