@@ -9,10 +9,10 @@
   "phaseList": "Expediente\nOrdem do dia",
   "clockFontSize": 12,
   "timerFontSize": 10,
-  "speakerFontSize": 2.5,
+  "speakerFontSize": 4.5,
   "titleFontSize": 1.5,
-  "aparteTimerFontSize": 3,
-  "aparteNameFontSize": 1.5,
+  "aparteTimerFontSize": 5.5,
+  "aparteNameFontSize": 3,
   "sessionInfo": "4ª ordinária, 27/03/2026.",
   "adminPassword": "445588",
   "lastEnvPassword": "admin123"

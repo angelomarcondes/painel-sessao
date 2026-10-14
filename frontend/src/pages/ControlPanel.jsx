@@ -78,17 +78,9 @@ export default function ControlPanel() {
   const stopAparte = () => socket.emit('stop_aparte');
   const handleAparteanteUpdate = (value) => socket.emit('update_aparteante', value);
   
-  const handlePanelToggle = () => {
-    if (sessionState.isPanelOpen) {
-      if (sessionState.timer.remaining > 0) {
-        alert("Não é possível fechar o painel enquanto o contador não estiver zerado.");
-        return;
-      }
-      socket.emit('close_panel');
-    } else {
-      window.open('/painel', '_blank');
-      socket.emit('open_panel');
-    }
+  const handleOpenPanel = () => {
+    window.open('/painel', '_blank');
+    socket.emit('open_panel');
   };
   
   const requestFullscreen = () => {
@@ -152,8 +144,8 @@ export default function ControlPanel() {
             </h3>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.45rem' }}>
                <button 
-                  onClick={handlePanelToggle} 
-                  className={sessionState.isPanelOpen ? "btn-danger" : "btn-primary"} 
+                  onClick={handleOpenPanel} 
+                  className="btn-primary" 
                   style={{ 
                     padding: '0.5rem 0.35rem', 
                     fontSize: '0.82rem', 
@@ -161,13 +153,11 @@ export default function ControlPanel() {
                     alignItems: 'center', 
                     justifyContent: 'center', 
                     gap: '0.35rem', 
-                    opacity: (sessionState.isPanelOpen && sessionState.timer.remaining > 0) ? 0.5 : 1,
                     whiteSpace: 'nowrap'
                   }}
-                  disabled={sessionState.isPanelOpen && sessionState.timer.remaining > 0}
-                  title={sessionState.isPanelOpen ? 'Fechar janela do painel' : 'Abrir janela do painel'}
+                  title="Abrir o painel em nova aba"
                >
-                 <Monitor size={15} /> {sessionState.isPanelOpen ? 'Fechar painel' : 'Abrir painel'}
+                 <Monitor size={15} /> Abrir o painel
                </button>
                <button 
                   onClick={requestFullscreen} 
